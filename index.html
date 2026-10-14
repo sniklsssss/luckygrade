@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roulette</title>
-<meta name="description" content="Roulette — апгрейд скинов с шансом до 80%. Крути колесо, забирай множитель, получай кэшбек при проигрыше.">
+<meta name="description" content="Roulette — апгрейд скинов с шансом до 80%.">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -207,7 +207,6 @@
         display: flex; align-items: baseline; gap: 6px;
         font-family: 'JetBrains Mono', monospace;
         color: var(--text); font-size: 13px;
-        letter-spacing: 0;
     }
     .bet-val .max { color: var(--dim); font-size: 11px; }
 
@@ -351,7 +350,6 @@
     .stats .item span {
         font-family: 'JetBrains Mono', monospace;
         color: var(--text); font-weight: 700;
-        letter-spacing: 0;
     }
     .stats .result {
         grid-column: 5;
@@ -403,7 +401,6 @@
         font-family: 'JetBrains Mono', monospace;
         font-size: 14px;
         outline: none;
-        transition: border 0.15s;
         user-select: text;
     }
     .field input[type="text"]:focus { border-color: var(--red); }
@@ -447,7 +444,6 @@
         width: 32px; height: 32px;
         border: 1px solid var(--line2);
         cursor: pointer;
-        transition: transform 0.12s, border-color 0.12s;
         padding: 0;
     }
     .color-dot:hover { transform: scale(1.1); border-color: var(--text); }
@@ -468,7 +464,6 @@
         border: 1px solid var(--line2);
         position: relative;
         cursor: pointer;
-        transition: background 0.15s;
     }
     .toggle::after {
         content: '';
@@ -479,23 +474,16 @@
         transition: transform 0.15s, background 0.15s;
     }
     .toggle.on { background: #2a1a15; border-color: var(--red); }
-    .toggle.on::after {
-        transform: translateX(18px);
-        background: var(--red);
-    }
+    .toggle.on::after { transform: translateX(18px); background: var(--red); }
     .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
     .toggle.on.gold::after { background: var(--gold); }
 
-    /* ============ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ============ */
+    /* ============ МОДАЛКА ============ */
     .confirm-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.9);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 99998;
-        backdrop-filter: blur(6px);
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.9);
+        display: none; align-items: center; justify-content: center;
+        z-index: 99998; backdrop-filter: blur(6px);
     }
     .confirm-overlay.active { display: flex; animation: fadeIn 0.2s; }
     .confirm-box {
@@ -512,39 +500,23 @@
         100% { transform: scale(1); opacity: 1; }
     }
     .confirm-title {
-        font-size: 22px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        color: var(--red-bright);
-        margin-bottom: 12px;
+        font-size: 22px; font-weight: 900;
+        text-transform: uppercase; letter-spacing: 3px;
+        color: var(--red-bright); margin-bottom: 12px;
     }
     .confirm-text {
-        font-size: 14px;
-        color: var(--muted);
-        margin-bottom: 28px;
-        line-height: 1.6;
+        font-size: 14px; color: var(--muted);
+        margin-bottom: 28px; line-height: 1.6;
     }
-    .confirm-buttons {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-    }
-    .confirm-buttons .btn {
-        padding: 12px 28px;
-        min-width: 120px;
-    }
+    .confirm-buttons { display: flex; gap: 12px; justify-content: center; }
+    .confirm-buttons .btn { padding: 12px 28px; min-width: 120px; }
 
     /* ============ КРАШ ============ */
     .crash-overlay {
-        position: fixed;
-        inset: 0;
+        position: fixed; inset: 0;
         background: rgba(0, 0, 0, 0.95);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 99999;
-        backdrop-filter: blur(8px);
+        display: none; align-items: center; justify-content: center;
+        z-index: 99999; backdrop-filter: blur(8px);
         flex-direction: column;
     }
     .crash-overlay.active { display: flex; animation: fadeIn 0.4s; }
@@ -567,34 +539,21 @@
         80% { transform: translate(4px, 6px); }
     }
     .crash-sub {
-        margin-top: 16px;
-        font-size: 16px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        font-weight: 500;
+        margin-top: 16px; font-size: 16px; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 4px; font-weight: 500;
     }
     .crash-info {
-        margin-top: 32px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 14px;
-        color: var(--text);
-        text-align: center;
-        line-height: 2;
+        margin-top: 32px; font-family: 'JetBrains Mono', monospace;
+        font-size: 14px; color: var(--text); text-align: center; line-height: 2;
     }
     .crash-info b { color: var(--gold); }
     .crash-restart {
-        margin-top: 40px;
-        background: var(--red);
-        border: none;
-        padding: 14px 40px;
-        color: #fff;
-        font-family: inherit;
+        margin-top: 40px; background: var(--red);
+        border: none; padding: 14px 40px;
+        color: #fff; font-family: inherit;
         font-size: 13px; font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 3px;
+        text-transform: uppercase; letter-spacing: 3px;
         cursor: pointer;
-        transition: background 0.15s;
     }
     .crash-restart:hover { background: var(--red-bright); }
 
@@ -658,7 +617,7 @@
                 <path id="winArc" fill="none" stroke="url(#winGrad)" stroke-width="28"/>
                 <path id="prizeArc" fill="none" stroke="url(#prizeGrad)" stroke-width="28" style="display:none;"/>
                 <circle cx="180" cy="180" r="142" fill="#14141a"/>
-                <circle cx="180" cy="180" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
+                <circle cx="180" cy="142" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
             </svg>
             <div class="wheel-info">
                 <div class="wheel-pct" id="wheelPct">80.00%</div>
@@ -769,17 +728,16 @@
             </div>
         </div>
 
-        <!-- ADMIN+ панель — показывается только при ADMIN+ -->
         <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
             <h3>★ ADMIN+ ПАНЕЛЬ ★</h3>
 
             <div class="toggle-row">
-                <span>Все апгрейды заходят (100% выигрыш)</span>
+                <span>Все апгрейды заходят</span>
                 <div class="toggle gold" id="alwaysWinToggle"></div>
             </div>
 
             <div class="toggle-row">
-                <span>Приз всегда показывается</span>
+                <span>Приз всегда выпадает (100% в приз)</span>
                 <div class="toggle gold" id="alwaysPrizeToggle"></div>
             </div>
 
@@ -796,16 +754,15 @@
             </div>
         </div>
 
-        <!-- ОПАСНАЯ ЗОНА -->
         <div class="card">
             <h3 style="color: #b02222;">Опасная зона</h3>
             <button class="btn danger" style="width: 100%;" onclick="askReset()">
-                Сбросить всё и начать с нуля            </button>
+                Сбросить всё и начать с нуля
+            </button>
         </div>
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
         <div class="confirm-title">Уверен?</div>
@@ -1132,9 +1089,10 @@ const PROMOS = {
         msg: '★ ADMIN+ активирован! Возможности: 100% выигрыш, изменение баланса, вечный приз.',
         msgType: 'gold',
     },
-    // Примеры для добавления:
-    // 'BONUS500':  { balance: 500,  msg: '+500' },
-    // 'FREEMONEY': { balance: 5000, msg: '+5000', once: false },
+    'oleza67': {
+        balance: 5000,
+        msg: 'Активировано. +5000 к балансу',
+    },
 };
 
 // ============================================================
@@ -1144,7 +1102,7 @@ let bet = 100;
 let win = 125;
 let spinning = false;
 let rotation = 0;
-let currentPrizeActive = false;
+let prizeSectorVisible = false; // виден ли сейчас сектор приза
 
 const state = {
     balance: 1000,
@@ -1156,12 +1114,11 @@ const state = {
     fastSpin: false,
     soundOn: true,
     pending: null,
-    // ADMIN+ настройки
     alwaysWin: false,
     alwaysPrize: false,
 };
 
-const LS_KEY = 'roulette_state_v8';
+const LS_KEY = 'roulette_state_v9';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -1186,7 +1143,6 @@ function update() {
     $('nickDisplay').textContent = state.nickname || 'Гость';
     $('avatarLetter').textContent = (state.nickname || '?').charAt(0).toUpperCase();
 
-    // Бейджи
     const tag = $('adminTag');
     const av = $('avatarLetter');
     if (state.isAdminPlus) {
@@ -1204,7 +1160,6 @@ function update() {
         av.classList.remove('admin-plus');
     }
 
-    // Панель ADMIN+
     $('adminPlusPanel').style.display = state.isAdminPlus ? 'block' : 'none';
 
     updateWheel();
@@ -1281,7 +1236,8 @@ function updateWheel() {
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
 
-    if (currentPrizeActive || state.alwaysPrize) {
+    // Сектор приза показывается только если prizeSectorVisible
+    if (prizeSectorVisible) {
         const prizeHalfDeg = (2 * half) * 0.10 / 2;
         const prizeStart = 180 - prizeHalfDeg;
         const prizeEnd = 180 + prizeHalfDeg;
@@ -1338,7 +1294,6 @@ function spin() {
     Sound.resume();
 
     // ============ 1. РЕЗУЛЬТАТ ============
-    // ADMIN+: все апгрейды заходят
     let isWin;
     if (state.isAdminPlus && state.alwaysWin) {
         isWin = true;
@@ -1346,45 +1301,71 @@ function spin() {
         isWin = Math.random() * 100 < chance;
     }
 
-    // Приз: 5% обычный, или принудительно, если ADMIN+ включил вечный приз
-    let prizeActive;
-    if (state.isAdminPlus && state.alwaysPrize) {
-        prizeActive = isWin; // приз только если выигрыш
+    // ============ 2. СЕКТОР ПРИЗА ============
+    // Сектор появляется с шансом 5% (только при выигрыше)
+    // Если появился — попадание в него с шансом 10%
+    let prizeActive = false;
+
+    if (isWin) {
+        if (state.isAdminPlus && state.alwaysPrize) {
+            // ADMIN+ принудительно — приз всегда, попадёт всегда
+            prizeSectorVisible = true;
+            prizeActive = true;
+        } else {
+            // Обычный шанс появления сектора — 5%
+            const sectorAppears = Math.random() < 0.05;
+            prizeSectorVisible = sectorAppears;
+
+            if (sectorAppears) {
+                // Сектор появился → попадание в него 10%
+                prizeActive = Math.random() < 0.10;
+            }
+        }
     } else {
-        prizeActive = isWin && Math.random() < 0.05;
+        // При проигрыше сектор не появляется
+        prizeSectorVisible = false;
     }
 
+    updateWheel();
+
+    // ============ 3. ВЫПЛАТА ============
     let payout = 0;
     if (isWin) {
         payout = bet * (100 / chance);
         if (prizeActive) payout *= 2;
     }
 
-    currentPrizeActive = prizeActive;
-    updateWheel();
-
-    // ============ 2. СПИСЫВАЕМ / НАЧИСЛЯЕМ ============
+    // ============ 4. СПИСЫВАЕМ / НАЧИСЛЯЕМ ============
     state.balance -= bet;
     if (isWin) state.balance += payout;
 
-    // ============ 3. УГОЛ ============
+    // ============ 5. УГОЛ ============
     const half = (chance / 100) * 180;
     const prizeHalfDeg = (2 * half) * 0.10 / 2;
 
     let target;
     if (isWin) {
-        if (prizeActive) {
+        if (prizeActive && prizeSectorVisible) {
+            // Попадает в сектор приза
             target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
         } else {
-            const leftSize = half - prizeHalfDeg;
-            const rightSize = half - prizeHalfDeg;
-            if (Math.random() < 0.5) {
-                target = (180 - half) + Math.random() * leftSize;
+            // Обычный выигрыш — вне сектора приза
+            if (prizeSectorVisible) {
+                // Сектор есть, но не попали — идём мимо него
+                const leftSize = half - prizeHalfDeg;
+                const rightSize = half - prizeHalfDeg;
+                if (Math.random() < 0.5) {
+                    target = (180 - half) + Math.random() * leftSize;
+                } else {
+                    target = (180 + prizeHalfDeg) + Math.random() * rightSize;
+                }
             } else {
-                target = (180 + prizeHalfDeg) + Math.random() * rightSize;
+                // Сектора нет — любое место в зоне выигрыша
+                target = (180 - half) + Math.random() * (2 * half);
             }
         }
     } else {
+        // Проигрыш — вне зоны
         if (Math.random() < 0.5) {
             target = Math.random() * (180 - half);
         } else {
@@ -1401,6 +1382,7 @@ function spin() {
     state.pending = {
         bet: bet, win: win, chance: chance,
         isWin: isWin, payout: payout, isPrize: prizeActive,
+        prizeVisible: prizeSectorVisible,
         rotation: rotation, timestamp: Date.now(),
     };
     save();
@@ -1438,7 +1420,8 @@ function spin() {
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        currentPrizeActive = false;
+        // Скрываем сектор после спина
+        prizeSectorVisible = false;
         update();
 
         if (state.balance < 1) {
@@ -1482,6 +1465,7 @@ function restartAfterCrash() {
     state.alwaysPrize = false;
     bet = 100;
     win = 125;
+    prizeSectorVisible = false;
     save();
     $('crashOverlay').classList.remove('active');
     $('nickInput').value = '';
@@ -1697,7 +1681,6 @@ $('soundToggle').addEventListener('click', () => {
     save();
 });
 
-// ADMIN+ тумблеры
 $('alwaysWinToggle').addEventListener('click', () => {
     if (!state.isAdminPlus) return;
     state.alwaysWin = !state.alwaysWin;
@@ -1711,7 +1694,6 @@ $('alwaysPrizeToggle').addEventListener('click', () => {
     state.alwaysPrize = !state.alwaysPrize;
     $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
     save();
-    updateWheel();
     Sound.cashback();
 });
 
@@ -1730,7 +1712,6 @@ function cancelReset() {
 }
 
 function doReset() {
-    // Полный сброс
     state.balance = 1000;
     state.nickname = '';
     state.isAdmin = false;
@@ -1744,12 +1725,11 @@ function doReset() {
     state.alwaysPrize = false;
     bet = 100;
     win = 125;
+    prizeSectorVisible = false;
     save();
 
-    // Закрываем окно
     $('confirmOverlay').classList.remove('active');
 
-    // Обновляем UI
     document.documentElement.style.setProperty('--arrow', '#c23a2b');
     $('customColor').value = '#c23a2b';
     document.querySelectorAll('.color-dot').forEach(d => {
@@ -1763,7 +1743,6 @@ function doReset() {
     $('alwaysPrizeToggle').classList.remove('on');
     $('arrowRot').style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
 
-    // Возвращаемся на главную
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelector('[data-tab="main"]').classList.add('active');
@@ -1790,11 +1769,9 @@ $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 
-// ADMIN+ тумблеры — восстанавливаем
 $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
 $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
 
-// Восстановление после обновления
 if (state.pending) {
     const p = state.pending;
 
