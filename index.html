@@ -21,8 +21,10 @@
         --red: #c23a2b;
         --red-bright: #e54a35;
         --gold: #c9942c;
+        --gold-bright: #e5b73c;
         --green: #6fa32c;
         --arrow: #c23a2b;
+        --admin-plus: #e5a020;
     }
 
     html, body {
@@ -62,12 +64,21 @@
         font-weight: 700; font-size: 13px; color: #fff;
         flex-shrink: 0;
     }
+    .avatar.admin-plus {
+        background: linear-gradient(135deg, #e5a020, #c23a2b);
+        box-shadow: 0 0 12px rgba(229, 160, 32, 0.6);
+    }
     .nick-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .admin-tag {
         background: var(--red); color: #fff;
         font-size: 9px; font-weight: 700;
         padding: 2px 5px;
         text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .admin-tag.admin-plus {
+        background: linear-gradient(135deg, #e5a020, #c23a2b);
+        color: #fff;
+        box-shadow: 0 0 8px rgba(229, 160, 32, 0.6);
     }
     .nick {
         font-weight: 600; font-size: 14px; color: var(--text);
@@ -282,7 +293,6 @@
     .mult.p75 { border-color: #2a3a15; color: #7a9a3a; }
     .mult.p75:hover { background: #0f1408; color: var(--green); border-color: var(--green); }
 
-    /* СТРОКА ВВОДА ВЫИГРЫША */
     .win-input-row {
         display: flex;
         align-items: center;
@@ -370,6 +380,10 @@
         text-transform: uppercase; letter-spacing: 2px;
         color: var(--red); margin-bottom: 18px;
     }
+    .card.admin-plus h3 {
+        color: var(--admin-plus);
+        text-shadow: 0 0 10px rgba(229, 160, 32, 0.5);
+    }
     .field {
         display: flex; align-items: center; gap: 12px;
         margin-bottom: 12px;
@@ -378,7 +392,7 @@
     .field label {
         font-size: 12px; color: var(--muted);
         text-transform: uppercase; letter-spacing: 1px;
-        width: 140px; flex-shrink: 0;
+        width: 160px; flex-shrink: 0;
     }
     .field input[type="text"] {
         flex: 1;
@@ -408,6 +422,10 @@
     .btn:hover { background: var(--red-bright); }
     .btn.green { background: var(--green); }
     .btn.green:hover { background: #85c035; }
+    .btn.gold { background: linear-gradient(135deg, #e5a020, #c23a2b); }
+    .btn.gold:hover { background: linear-gradient(135deg, #f5b030, #d44a3b); }
+    .btn.danger { background: #8a1a1a; }
+    .btn.danger:hover { background: #b02222; }
 
     .promo-row { display: flex; gap: 8px; }
     .promo-row input { flex: 1; }
@@ -419,6 +437,7 @@
     }
     .promo-msg.ok { color: var(--green); }
     .promo-msg.err { color: var(--red-bright); }
+    .promo-msg.gold { color: var(--gold-bright); }
 
     .color-row {
         display: flex; gap: 8px; flex-wrap: wrap;
@@ -463,6 +482,57 @@
     .toggle.on::after {
         transform: translateX(18px);
         background: var(--red);
+    }
+    .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
+    .toggle.on.gold::after { background: var(--gold); }
+
+    /* ============ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ============ */
+    .confirm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 99998;
+        backdrop-filter: blur(6px);
+    }
+    .confirm-overlay.active { display: flex; animation: fadeIn 0.2s; }
+    .confirm-box {
+        background: var(--bg2);
+        border: 2px solid var(--red);
+        padding: 32px 40px;
+        max-width: 480px;
+        text-align: center;
+        box-shadow: 0 0 60px rgba(194, 58, 43, 0.5);
+        animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+        0% { transform: scale(0.7); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .confirm-title {
+        font-size: 22px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        color: var(--red-bright);
+        margin-bottom: 12px;
+    }
+    .confirm-text {
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 28px;
+        line-height: 1.6;
+    }
+    .confirm-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+    .confirm-buttons .btn {
+        padding: 12px 28px;
+        min-width: 120px;
     }
 
     /* ============ КРАШ ============ */
@@ -579,15 +649,13 @@
                         <stop offset="100%" stop-color="#c9942c"/>
                     </linearGradient>
                     <linearGradient id="prizeGrad" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stop-color="#e54a35"/>
+                        <stop offset="0%" stop-color="#ffd94a"/>
                         <stop offset="50%" stop-color="#f5a623"/>
-                        <stop offset="100%" stop-color="#ffd94a"/>
+                        <stop offset="100%" stop-color="#ffeb7a"/>
                     </linearGradient>
                 </defs>
                 <circle cx="180" cy="180" r="165" fill="none" stroke="url(#ringGrad)" stroke-width="28"/>
-                <!-- Обычная зона выигрыша -->
                 <path id="winArc" fill="none" stroke="url(#winGrad)" stroke-width="28"/>
-                <!-- Секретный приз (поверх) -->
                 <path id="prizeArc" fill="none" stroke="url(#prizeGrad)" stroke-width="28" style="display:none;"/>
                 <circle cx="180" cy="180" r="142" fill="#14141a"/>
                 <circle cx="180" cy="180" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
@@ -684,6 +752,7 @@
                 <button class="color-dot" data-color="#e8e8ec" style="background:#e8e8ec"></button>
             </div>
         </div>
+
         <div class="card">
             <h3>Прокрутка</h3>
             <div class="toggle-row">
@@ -691,12 +760,64 @@
                 <div class="toggle" id="fastToggle"></div>
             </div>
         </div>
+
         <div class="card">
             <h3>Звук</h3>
             <div class="toggle-row">
                 <span>Звуковые эффекты</span>
                 <div class="toggle on" id="soundToggle"></div>
             </div>
+        </div>
+
+        <!-- ADMIN+ панель — показывается только при ADMIN+ -->
+        <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
+            <h3>★ ADMIN+ ПАНЕЛЬ ★</h3>
+
+            <div class="toggle-row">
+                <span>Все апгрейды заходят (100% выигрыш)</span>
+                <div class="toggle gold" id="alwaysWinToggle"></div>
+            </div>
+
+            <div class="toggle-row">
+                <span>Приз всегда показывается</span>
+                <div class="toggle gold" id="alwaysPrizeToggle"></div>
+            </div>
+
+            <div class="field" style="margin-top: 14px;">
+                <label>Изменить баланс</label>
+                <input type="text" id="adminBalanceInput" placeholder="1000" inputmode="decimal">
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn gold" onclick="adminSetBalance()">Установить</button>
+                <button class="btn gold" onclick="adminAddBalance(1000)">+1K</button>
+                <button class="btn gold" onclick="adminAddBalance(10000)">+10K</button>
+                <button class="btn gold" onclick="adminAddBalance(100000)">+100K</button>
+                <button class="btn gold" onclick="adminAddBalance(1000000)">+1M</button>
+            </div>
+        </div>
+
+        <!-- ОПАСНАЯ ЗОНА -->
+        <div class="card">
+            <h3 style="color: #b02222;">Опасная зона</h3>
+            <button class="btn danger" style="width: 100%;" onclick="askReset()">
+                Сбросить всё и начать с нуля            </button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-title">Уверен?</div>
+        <div class="confirm-text">
+            Это действие сотрёт весь прогресс:<br>
+            баланс, ник, статус ADMIN, промокоды.<br>
+            Начнёшь заново с 1000.<br><br>
+            Отменить это нельзя.
+        </div>
+        <div class="confirm-buttons">
+            <button class="btn" onclick="cancelReset()">Отмена</button>
+            <button class="btn danger" onclick="doReset()">Да, сбросить</button>
         </div>
     </div>
 </div>
@@ -809,16 +930,12 @@ const Sound = (() => {
         resume() { getCtx(); },
 
         click() { tone(500, 0.06, 'sine', 0.04, 0, 0.005); },
-
-        tick(intensity = 1) {
-            tone(700 + Math.random() * 200, 0.04, 'sine', 0.025 * intensity, 0, 0.005);
-        },
+        tick(intensity = 1) { tone(700 + Math.random() * 200, 0.04, 'sine', 0.025 * intensity, 0, 0.005); },
 
         win() {
             if (!enabled) return;
             const c = getCtx();
             const verb = getReverb();
-
             const sweep = c.createOscillator();
             const sweepGain = c.createGain();
             sweep.type = 'sine';
@@ -930,14 +1047,11 @@ const Sound = (() => {
             });
         },
 
-        // Победный звук приза — с добавлением высоких нот
         prize() {
             if (!enabled) return;
             const c = getCtx();
             const verb = getReverb();
-            // Обычный джингл
             Sound.win();
-            // Плюс золотой звон
             const extra = [
                 { freq: 1760, time: 1.20, vol: 0.06 },
                 { freq: 2093, time: 1.28, vol: 0.06 },
@@ -1004,25 +1118,50 @@ const Sound = (() => {
 })();
 
 // ============================================================
+// ПРОМОКОДЫ
+// ============================================================
+const PROMOS = {
+    'TEST-5106': {
+        balance: 10000,
+        admin: true,
+        msg: 'Активировано. +10000, статус ADMIN',
+    },
+    'Pupsik_2288': {
+        balance: 0,
+        adminPlus: true,
+        msg: '★ ADMIN+ активирован! Возможности: 100% выигрыш, изменение баланса, вечный приз.',
+        msgType: 'gold',
+    },
+    // Примеры для добавления:
+    // 'BONUS500':  { balance: 500,  msg: '+500' },
+    // 'FREEMONEY': { balance: 5000, msg: '+5000', once: false },
+};
+
+// ============================================================
 // ИГРА
 // ============================================================
 let bet = 100;
 let win = 125;
 let spinning = false;
 let rotation = 0;
+let currentPrizeActive = false;
 
 const state = {
     balance: 1000,
     nickname: '',
     isAdmin: false,
+    isAdminPlus: false,
     usedPromos: [],
     arrowColor: '#c23a2b',
     fastSpin: false,
     soundOn: true,
     pending: null,
+    // ADMIN+ настройки
+    alwaysWin: false,
+    alwaysPrize: false,
 };
 
-const LS_KEY = 'roulette_state_v7';
+const LS_KEY = 'roulette_state_v8';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -1046,7 +1185,28 @@ function update() {
     }
     $('nickDisplay').textContent = state.nickname || 'Гость';
     $('avatarLetter').textContent = (state.nickname || '?').charAt(0).toUpperCase();
-    $('adminTag').style.display = state.isAdmin ? 'inline-block' : 'none';
+
+    // Бейджи
+    const tag = $('adminTag');
+    const av = $('avatarLetter');
+    if (state.isAdminPlus) {
+        tag.style.display = 'inline-block';
+        tag.textContent = 'ADMIN+';
+        tag.className = 'admin-tag admin-plus';
+        av.classList.add('admin-plus');
+    } else if (state.isAdmin) {
+        tag.style.display = 'inline-block';
+        tag.textContent = 'ADMIN';
+        tag.className = 'admin-tag';
+        av.classList.remove('admin-plus');
+    } else {
+        tag.style.display = 'none';
+        av.classList.remove('admin-plus');
+    }
+
+    // Панель ADMIN+
+    $('adminPlusPanel').style.display = state.isAdminPlus ? 'block' : 'none';
+
     updateWheel();
     updateStats();
     updateSlider();
@@ -1102,9 +1262,6 @@ function arcPath(a1, a2) {
     return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`;
 }
 
-// Показывать ли сейчас приз (используется и в отрисовке, и в спине)
-let currentPrizeActive = false;
-
 function updateWheel() {
     const chance = getChance();
     const arc = $('winArc');
@@ -1124,11 +1281,8 @@ function updateWheel() {
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
 
-    // Приз показываем только если currentPrizeActive (после клика)
-    if (currentPrizeActive) {
-        // Приз занимает 10% нижней части выигрышной зоны
-        // Вся выигрышная зона = 2*half градусов, приз = 10% от неё, по центру низа
-        const prizeHalfDeg = (2 * half) * 0.10 / 2; // половина приза
+    if (currentPrizeActive || state.alwaysPrize) {
+        const prizeHalfDeg = (2 * half) * 0.10 / 2;
         const prizeStart = 180 - prizeHalfDeg;
         const prizeEnd = 180 + prizeHalfDeg;
         $('prizeArc').setAttribute('d', arcPath(prizeStart, prizeEnd));
@@ -1183,11 +1337,22 @@ function spin() {
 
     Sound.resume();
 
-    // ============ 1. ОПРЕДЕЛЯЕМ РЕЗУЛЬТАТ ============
-    const isWin = Math.random() * 100 < chance;
+    // ============ 1. РЕЗУЛЬТАТ ============
+    // ADMIN+: все апгрейды заходят
+    let isWin;
+    if (state.isAdminPlus && state.alwaysWin) {
+        isWin = true;
+    } else {
+        isWin = Math.random() * 100 < chance;
+    }
 
-    // Приз с шансом 5% (только если вообще выигрыш)
-    const prizeActive = isWin && Math.random() < 0.05;
+    // Приз: 5% обычный, или принудительно, если ADMIN+ включил вечный приз
+    let prizeActive;
+    if (state.isAdminPlus && state.alwaysPrize) {
+        prizeActive = isWin; // приз только если выигрыш
+    } else {
+        prizeActive = isWin && Math.random() < 0.05;
+    }
 
     let payout = 0;
     if (isWin) {
@@ -1195,7 +1360,6 @@ function spin() {
         if (prizeActive) payout *= 2;
     }
 
-    // Запоминаем, будет ли приз в этот раз (для отрисовки)
     currentPrizeActive = prizeActive;
     updateWheel();
 
@@ -1210,12 +1374,8 @@ function spin() {
     let target;
     if (isWin) {
         if (prizeActive) {
-            // Стрелка попадает в сектор приза (по центру низа)
             target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
         } else {
-            // Обычный выигрыш — внутри зоны, но вне сектора приза
-            // Левая часть [180-half, 180-prizeHalf]
-            // Правая часть [180+prizeHalf, 180+half]
             const leftSize = half - prizeHalfDeg;
             const rightSize = half - prizeHalfDeg;
             if (Math.random() < 0.5) {
@@ -1225,7 +1385,6 @@ function spin() {
             }
         }
     } else {
-        // Проигрыш — вне зоны
         if (Math.random() < 0.5) {
             target = Math.random() * (180 - half);
         } else {
@@ -1240,14 +1399,9 @@ function spin() {
     rotation += turns * 360 + delta;
 
     state.pending = {
-        bet: bet,
-        win: win,
-        chance: chance,
-        isWin: isWin,
-        payout: payout,
-        isPrize: prizeActive,
-        rotation: rotation,
-        timestamp: Date.now(),
+        bet: bet, win: win, chance: chance,
+        isWin: isWin, payout: payout, isPrize: prizeActive,
+        rotation: rotation, timestamp: Date.now(),
     };
     save();
 
@@ -1284,7 +1438,6 @@ function spin() {
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        // Скрываем приз после спина
         currentPrizeActive = false;
         update();
 
@@ -1322,8 +1475,11 @@ function restartAfterCrash() {
     state.balance = 1000;
     state.nickname = '';
     state.isAdmin = false;
+    state.isAdminPlus = false;
     state.usedPromos = [];
     state.pending = null;
+    state.alwaysWin = false;
+    state.alwaysPrize = false;
     bet = 100;
     win = 125;
     save();
@@ -1439,25 +1595,69 @@ function applyPromo() {
     const msg = $('promoMsg');
     Sound.resume();
 
-    if (code === 'TEST-5106') {
-        if (state.usedPromos.includes('TEST-5106')) {
-            msg.textContent = 'Промокод уже использован';
-            msg.className = 'promo-msg err';
-            return;
-        }
-        state.balance += 10000;
-        state.isAdmin = true;
-        state.usedPromos.push('TEST-5106');
-        save();
-        update();
-        msg.textContent = 'Активировано. +10000, статус ADMIN';
-        msg.className = 'promo-msg ok';
-        $('promoInput').value = '';
-        Sound.win();
+    if (!code) {
+        msg.textContent = 'Введи промокод';
+        msg.className = 'promo-msg err';
         return;
     }
-    msg.textContent = 'Неверный промокод';
-    msg.className = 'promo-msg err';
+
+    const promo = PROMOS[code];
+
+    if (!promo) {
+        msg.textContent = 'Неверный промокод';
+        msg.className = 'promo-msg err';
+        return;
+    }
+
+    const once = promo.once !== false;
+    if (once && state.usedPromos.includes(code)) {
+        msg.textContent = 'Промокод уже использован';
+        msg.className = 'promo-msg err';
+        return;
+    }
+
+    if (promo.balance) state.balance += promo.balance;
+    if (promo.admin) state.isAdmin = true;
+    if (promo.adminPlus) state.isAdminPlus = true;
+    if (once) state.usedPromos.push(code);
+
+    save();
+    update();
+
+    msg.textContent = promo.msg || 'Активировано';
+    msg.className = 'promo-msg ' + (promo.msgType || 'ok');
+    $('promoInput').value = '';
+
+    if (promo.adminPlus) {
+        Sound.prize();
+    } else {
+        Sound.win();
+    }
+}
+
+// ============================================================
+// ADMIN+ ФУНКЦИИ
+// ============================================================
+function adminSetBalance() {
+    if (!state.isAdminPlus) return;
+    const v = parseFloat($('adminBalanceInput').value);
+    if (isNaN(v) || v < 0) {
+        alert('Введи корректное число');
+        return;
+    }
+    state.balance = v;
+    save();
+    update();
+    $('adminBalanceInput').value = '';
+    Sound.cashback();
+}
+
+function adminAddBalance(amount) {
+    if (!state.isAdminPlus) return;
+    state.balance += amount;
+    save();
+    update();
+    Sound.cashback();
 }
 
 // ============================================================
@@ -1497,6 +1697,81 @@ $('soundToggle').addEventListener('click', () => {
     save();
 });
 
+// ADMIN+ тумблеры
+$('alwaysWinToggle').addEventListener('click', () => {
+    if (!state.isAdminPlus) return;
+    state.alwaysWin = !state.alwaysWin;
+    $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
+    save();
+    Sound.cashback();
+});
+
+$('alwaysPrizeToggle').addEventListener('click', () => {
+    if (!state.isAdminPlus) return;
+    state.alwaysPrize = !state.alwaysPrize;
+    $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
+    save();
+    updateWheel();
+    Sound.cashback();
+});
+
+// ============================================================
+// СБРОС ВСЕГО
+// ============================================================
+function askReset() {
+    Sound.resume();
+    Sound.click();
+    $('confirmOverlay').classList.add('active');
+}
+
+function cancelReset() {
+    $('confirmOverlay').classList.remove('active');
+    Sound.click();
+}
+
+function doReset() {
+    // Полный сброс
+    state.balance = 1000;
+    state.nickname = '';
+    state.isAdmin = false;
+    state.isAdminPlus = false;
+    state.usedPromos = [];
+    state.arrowColor = '#c23a2b';
+    state.fastSpin = false;
+    state.soundOn = true;
+    state.pending = null;
+    state.alwaysWin = false;
+    state.alwaysPrize = false;
+    bet = 100;
+    win = 125;
+    save();
+
+    // Закрываем окно
+    $('confirmOverlay').classList.remove('active');
+
+    // Обновляем UI
+    document.documentElement.style.setProperty('--arrow', '#c23a2b');
+    $('customColor').value = '#c23a2b';
+    document.querySelectorAll('.color-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.color === '#c23a2b');
+    });
+    $('fastToggle').classList.remove('on');
+    $('soundToggle').classList.add('on');
+    Sound.setEnabled(true);
+    $('nickInput').value = '';
+    $('alwaysWinToggle').classList.remove('on');
+    $('alwaysPrizeToggle').classList.remove('on');
+    $('arrowRot').style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+
+    // Возвращаемся на главную
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelector('[data-tab="main"]').classList.add('active');
+    $('screen-main').classList.add('active');
+
+    update();
+}
+
 // ============================================================
 // СТАРТ
 // ============================================================
@@ -1515,9 +1790,11 @@ $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 
-// ============================================================
-// ВОССТАНОВЛЕНИЕ ПОСЛЕ ОБНОВЛЕНИЯ
-// ============================================================
+// ADMIN+ тумблеры — восстанавливаем
+$('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
+$('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
+
+// Восстановление после обновления
 if (state.pending) {
     const p = state.pending;
 
@@ -1551,8 +1828,6 @@ if (state.pending) {
         setTimeout(() => triggerCrash(p.bet), 600);
     }
 } else {
-    // Если pending нет, но баланс < 1 — сразу показываем краш
-    // (это случай, когда обновили страницу уже после проигрыша всего баланса)
     if (state.balance < 1) {
         if (state.balance < 0) state.balance = 0;
         save();
