@@ -282,7 +282,7 @@
     .mult.p75 { border-color: #2a3a15; color: #7a9a3a; }
     .mult.p75:hover { background: #0f1408; color: var(--green); border-color: var(--green); }
 
-    /* ============ СТРОКА ВВОДА ВЫИГРЫША ============ */
+    /* СТРОКА ВВОДА ВЫИГРЫША */
     .win-input-row {
         display: flex;
         align-items: center;
@@ -353,6 +353,7 @@
     }
     .stats .result.win { color: var(--green); }
     .stats .result.lose { color: var(--red-bright); }
+    .stats .result.prize { color: var(--gold); text-shadow: 0 0 10px rgba(201, 148, 44, 0.6); }
 
     /* ============ КАРТОЧКИ ============ */
     .cards {
@@ -577,9 +578,17 @@
                         <stop offset="50%" stop-color="#d4782c"/>
                         <stop offset="100%" stop-color="#c9942c"/>
                     </linearGradient>
+                    <linearGradient id="prizeGrad" x1="0" y1="1" x2="0" y2="0">
+                        <stop offset="0%" stop-color="#e54a35"/>
+                        <stop offset="50%" stop-color="#f5a623"/>
+                        <stop offset="100%" stop-color="#ffd94a"/>
+                    </linearGradient>
                 </defs>
                 <circle cx="180" cy="180" r="165" fill="none" stroke="url(#ringGrad)" stroke-width="28"/>
+                <!-- Обычная зона выигрыша -->
                 <path id="winArc" fill="none" stroke="url(#winGrad)" stroke-width="28"/>
+                <!-- Секретный приз (поверх) -->
+                <path id="prizeArc" fill="none" stroke="url(#prizeGrad)" stroke-width="28" style="display:none;"/>
                 <circle cx="180" cy="180" r="142" fill="#14141a"/>
                 <circle cx="180" cy="180" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
             </svg>
@@ -619,7 +628,6 @@
             </div>
         </div>
 
-        <!-- СТРОКА ВВОДА ВЫИГРЫША -->
         <div class="win-input-row">
             <label>Сумма выигрыша</label>
             <input type="text" id="winInputField" value="125.00" inputmode="decimal">
@@ -922,6 +930,42 @@ const Sound = (() => {
             });
         },
 
+        // Победный звук приза — с добавлением высоких нот
+        prize() {
+            if (!enabled) return;
+            const c = getCtx();
+            const verb = getReverb();
+            // Обычный джингл
+            Sound.win();
+            // Плюс золотой звон
+            const extra = [
+                { freq: 1760, time: 1.20, vol: 0.06 },
+                { freq: 2093, time: 1.28, vol: 0.06 },
+                { freq: 2637, time: 1.36, vol: 0.07 },
+                { freq: 3136, time: 1.44, vol: 0.07 },
+                { freq: 3520, time: 1.52, vol: 0.06 },
+            ];
+            extra.forEach(n => {
+                const osc = c.createOscillator();
+                const gain = c.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = n.freq;
+                gain.gain.setValueAtTime(0, c.currentTime + n.time);
+                gain.gain.linearRampToValueAtTime(n.vol, c.currentTime + n.time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + n.time + 1.0);
+                osc.connect(gain);
+                gain.connect(master);
+                if (verb) {
+                    const e = c.createGain();
+                    e.gain.value = 0.5;
+                    gain.connect(e);
+                    e.connect(verb);
+                }
+                osc.start(c.currentTime + n.time);
+                osc.stop(c.currentTime + n.time + 1.1);
+            });
+        },
+
         lose() {
             tone(220, 0.4, 'sine', 0.06, 0, 0.02);
             tone(165, 0.5, 'sine', 0.05, 0.15, 0.02);
@@ -978,7 +1022,7 @@ const state = {
     pending: null,
 };
 
-const LS_KEY = 'roulette_state_v6';
+const LS_KEY = 'roulette_state_v7';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -1024,7 +1068,6 @@ function updateStats() {
         $('winHint').textContent = '—';
     }
 
-    // Обновляем поле ввода выигрыша (если оно не в фокусе)
     if (document.activeElement !== $('winInputField')) {
         $('winInputField').value = win.toFixed(2);
     }
@@ -1059,6 +1102,9 @@ function arcPath(a1, a2) {
     return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`;
 }
 
+// Показывать ли сейчас приз (используется и в отрисовке, и в спине)
+let currentPrizeActive = false;
+
 function updateWheel() {
     const chance = getChance();
     const arc = $('winArc');
@@ -1068,6 +1114,7 @@ function updateWheel() {
         $('wheelState').textContent = '—';
         $('wheelState').className = 'wheel-state';
         arc.setAttribute('d', '');
+        $('prizeArc').style.display = 'none';
         $('spinBtn').disabled = true;
         return;
     }
@@ -1076,6 +1123,19 @@ function updateWheel() {
 
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
+
+    // Приз показываем только если currentPrizeActive (после клика)
+    if (currentPrizeActive) {
+        // Приз занимает 10% нижней части выигрышной зоны
+        // Вся выигрышная зона = 2*half градусов, приз = 10% от неё, по центру низа
+        const prizeHalfDeg = (2 * half) * 0.10 / 2; // половина приза
+        const prizeStart = 180 - prizeHalfDeg;
+        const prizeEnd = 180 + prizeHalfDeg;
+        $('prizeArc').setAttribute('d', arcPath(prizeStart, prizeEnd));
+        $('prizeArc').style.display = '';
+    } else {
+        $('prizeArc').style.display = 'none';
+    }
 
     if (chance >= 50) {
         $('wheelState').textContent = 'Безопасно';
@@ -1102,9 +1162,9 @@ function applyPercent(p) {
     update();
 }
 
-function showResult(text, win_) {
+function showResult(text, type_) {
     $('statResult').textContent = text;
-    $('statResult').className = 'result ' + (win_ ? 'win' : 'lose');
+    $('statResult').className = 'result ' + type_;
 }
 
 // ============================================================
@@ -1114,28 +1174,63 @@ function spin() {
     if (spinning) return;
     if (bet <= 0) return;
     if (Math.round(bet * 100) > Math.round(state.balance * 100)) {
-        showResult('Мало средств', false); return;
+        showResult('Мало средств', 'lose'); return;
     }
-    if (win <= bet) { showResult('Выигрыш > ставки', false); return; }
+    if (win <= bet) { showResult('Выигрыш > ставки', 'lose'); return; }
 
     const chance = getChance();
-    if (chance > 80) { showResult('Шанс > 80%', false); return; }
+    if (chance > 80) { showResult('Шанс > 80%', 'lose'); return; }
 
     Sound.resume();
 
+    // ============ 1. ОПРЕДЕЛЯЕМ РЕЗУЛЬТАТ ============
     const isWin = Math.random() * 100 < chance;
-    const payout = isWin ? bet * (100 / chance) : 0;
 
+    // Приз с шансом 5% (только если вообще выигрыш)
+    const prizeActive = isWin && Math.random() < 0.05;
+
+    let payout = 0;
+    if (isWin) {
+        payout = bet * (100 / chance);
+        if (prizeActive) payout *= 2;
+    }
+
+    // Запоминаем, будет ли приз в этот раз (для отрисовки)
+    currentPrizeActive = prizeActive;
+    updateWheel();
+
+    // ============ 2. СПИСЫВАЕМ / НАЧИСЛЯЕМ ============
     state.balance -= bet;
     if (isWin) state.balance += payout;
 
+    // ============ 3. УГОЛ ============
     const half = (chance / 100) * 180;
+    const prizeHalfDeg = (2 * half) * 0.10 / 2;
+
     let target;
     if (isWin) {
-        target = (180 - half) + Math.random() * (2 * half);
+        if (prizeActive) {
+            // Стрелка попадает в сектор приза (по центру низа)
+            target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
+        } else {
+            // Обычный выигрыш — внутри зоны, но вне сектора приза
+            // Левая часть [180-half, 180-prizeHalf]
+            // Правая часть [180+prizeHalf, 180+half]
+            const leftSize = half - prizeHalfDeg;
+            const rightSize = half - prizeHalfDeg;
+            if (Math.random() < 0.5) {
+                target = (180 - half) + Math.random() * leftSize;
+            } else {
+                target = (180 + prizeHalfDeg) + Math.random() * rightSize;
+            }
+        }
     } else {
-        if (Math.random() < 0.5) target = Math.random() * (180 - half);
-        else target = (180 + half) + Math.random() * (180 - half);
+        // Проигрыш — вне зоны
+        if (Math.random() < 0.5) {
+            target = Math.random() * (180 - half);
+        } else {
+            target = (180 + half) + Math.random() * (180 - half);
+        }
     }
 
     const turns = 5 + Math.floor(Math.random() * 3);
@@ -1150,6 +1245,7 @@ function spin() {
         chance: chance,
         isWin: isWin,
         payout: payout,
+        isPrize: prizeActive,
         rotation: rotation,
         timestamp: Date.now(),
     };
@@ -1175,14 +1271,21 @@ function spin() {
         save();
 
         if (isWin) {
-            showResult('+' + payout.toFixed(2), true);
-            Sound.win();
+            if (prizeActive) {
+                showResult('★ ПРИЗ +' + payout.toFixed(2) + ' ★', 'prize');
+                Sound.prize();
+            } else {
+                showResult('+' + payout.toFixed(2), 'win');
+                Sound.win();
+            }
         } else {
-            showResult('-' + bet.toFixed(2), false);
+            showResult('-' + bet.toFixed(2), 'lose');
             Sound.lose();
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
+        // Скрываем приз после спина
+        currentPrizeActive = false;
         update();
 
         if (state.balance < 1) {
@@ -1204,7 +1307,7 @@ function triggerCashback(b) {
     state.balance += amount;
     save();
     update();
-    showResult('Кэшбек +' + amount.toFixed(2), true);
+    showResult('Кэшбек +' + amount.toFixed(2), 'win');
     Sound.cashback();
 }
 
@@ -1267,20 +1370,15 @@ slider.addEventListener('pointerup', e => {
 // ПОЛЕ ВВОДА ВЫИГРЫША
 // ============================================================
 $('winInputField').addEventListener('input', e => {
-    // Оставляем только цифры и точку
     let v = e.target.value.replace(/[^\d.]/g, '');
-    // Только одна точка
     const parts = v.split('.');
     if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
     e.target.value = v;
 
     const num = parseFloat(v);
     if (isNaN(num) || num <= 0) return;
-
-    // Если выигрыш <= ставке — игнорируем
     if (num <= bet) return;
 
-    // Если шанс превышает 80% — ограничиваем
     const chance = (bet / num) * 100;
     if (chance > 80) {
         win = bet * (100 / 80);
@@ -1292,7 +1390,6 @@ $('winInputField').addEventListener('input', e => {
 });
 
 $('winInputField').addEventListener('blur', () => {
-    // На выходе из поля — форматируем и фиксируем
     const num = parseFloat($('winInputField').value);
     if (isNaN(num) || num <= bet) {
         win = bet * 1.25;
@@ -1305,9 +1402,7 @@ $('winInputField').addEventListener('blur', () => {
 });
 
 $('winInputField').addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-        e.target.blur();
-    }
+    if (e.key === 'Enter') e.target.blur();
 });
 
 // ============================================================
@@ -1420,6 +1515,9 @@ $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 
+// ============================================================
+// ВОССТАНОВЛЕНИЕ ПОСЛЕ ОБНОВЛЕНИЯ
+// ============================================================
 if (state.pending) {
     const p = state.pending;
 
@@ -1438,15 +1536,27 @@ if (state.pending) {
 
     setTimeout(() => {
         if (p.isWin) {
-            showResult('+' + p.payout.toFixed(2), true);
+            if (p.isPrize) {
+                showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
+            } else {
+                showResult('+' + p.payout.toFixed(2), 'win');
+            }
         } else {
-            showResult('-' + p.bet.toFixed(2), false);
+            showResult('-' + p.bet.toFixed(2), 'lose');
         }
     }, 300);
 
     if (state.balance < 1) {
         if (state.balance < 0) state.balance = 0;
         setTimeout(() => triggerCrash(p.bet), 600);
+    }
+} else {
+    // Если pending нет, но баланс < 1 — сразу показываем краш
+    // (это случай, когда обновили страницу уже после проигрыша всего баланса)
+    if (state.balance < 1) {
+        if (state.balance < 0) state.balance = 0;
+        save();
+        setTimeout(() => triggerCrash(0), 400);
     }
 }
 
