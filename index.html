@@ -282,6 +282,48 @@
     .mult.p75 { border-color: #2a3a15; color: #7a9a3a; }
     .mult.p75:hover { background: #0f1408; color: var(--green); border-color: var(--green); }
 
+    /* ============ СТРОКА ВВОДА ВЫИГРЫША ============ */
+    .win-input-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 18px;
+        background: var(--bg2);
+        border: 1px solid var(--line);
+    }
+    .win-input-row label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .win-input-row input {
+        flex: 1;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        padding: 10px 14px;
+        color: var(--text);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 15px;
+        font-weight: 700;
+        outline: none;
+        transition: border 0.15s;
+        text-align: right;
+        user-select: text;
+    }
+    .win-input-row input:focus { border-color: var(--red); }
+    .win-input-row .hint {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--dim);
+        flex-shrink: 0;
+        min-width: 80px;
+        text-align: right;
+    }
+
     .stats {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -577,6 +619,13 @@
             </div>
         </div>
 
+        <!-- СТРОКА ВВОДА ВЫИГРЫША -->
+        <div class="win-input-row">
+            <label>Сумма выигрыша</label>
+            <input type="text" id="winInputField" value="125.00" inputmode="decimal">
+            <span class="hint" id="winHint">x1.25</span>
+        </div>
+
         <div class="stats">
             <div class="item">Ставка <span id="statBet">100.00</span></div>
             <div class="item">Выигрыш <span id="statWin">125.00</span></div>
@@ -762,7 +811,6 @@ const Sound = (() => {
             const c = getCtx();
             const verb = getReverb();
 
-            // Свист вверх
             const sweep = c.createOscillator();
             const sweepGain = c.createGain();
             sweep.type = 'sine';
@@ -782,7 +830,6 @@ const Sound = (() => {
             sweep.start(c.currentTime);
             sweep.stop(c.currentTime + 0.45);
 
-            // Арпеджио
             const notes = [
                 { freq: 523.25, time: 0.00, vol: 0.10 },
                 { freq: 659.25, time: 0.08, vol: 0.10 },
@@ -820,7 +867,6 @@ const Sound = (() => {
                 osc2.stop(c.currentTime + n.time + 1.3);
             });
 
-            // Звон монет
             const coins = [
                 { freq: 2093, time: 0.65, vol: 0.06 },
                 { freq: 2637, time: 0.72, vol: 0.05 },
@@ -848,7 +894,6 @@ const Sound = (() => {
                 osc.stop(c.currentTime + n.time + 0.7);
             });
 
-            // Финальный аккорд
             const finalChord = [
                 { freq: 261.63, time: 1.05, vol: 0.08 },
                 { freq: 523.25, time: 1.05, vol: 0.07 },
@@ -933,7 +978,7 @@ const state = {
     pending: null,
 };
 
-const LS_KEY = 'roulette_state_v5';
+const LS_KEY = 'roulette_state_v6';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -946,7 +991,6 @@ function load() {
 }
 
 function update() {
-    // Если крутится или есть ожидающий результат — показываем прочерк
     if (spinning || state.pending) {
         $('balanceTop').textContent = '—';
         $('balanceTop').classList.remove('zero');
@@ -973,9 +1017,16 @@ function updateStats() {
     if (chance > 0) {
         $('statChance').textContent = chance.toFixed(2) + '%';
         $('statMult').textContent = 'x' + (100 / chance).toFixed(2);
+        $('winHint').textContent = 'x' + (100 / chance).toFixed(2);
     } else {
         $('statChance').textContent = '—';
         $('statMult').textContent = '—';
+        $('winHint').textContent = '—';
+    }
+
+    // Обновляем поле ввода выигрыша (если оно не в фокусе)
+    if (document.activeElement !== $('winInputField')) {
+        $('winInputField').value = win.toFixed(2);
     }
 }
 
@@ -1075,7 +1126,6 @@ function spin() {
     const isWin = Math.random() * 100 < chance;
     const payout = isWin ? bet * (100 / chance) : 0;
 
-    // Меняем баланс в фоне (но показывать будем только после спина)
     state.balance -= bet;
     if (isWin) state.balance += payout;
 
@@ -1106,7 +1156,7 @@ function spin() {
     save();
 
     spinning = true;
-    update(); // ← баланс станет "—"
+    update();
 
     $('spinBtn').disabled = true;
     $('statResult').textContent = '';
@@ -1121,7 +1171,6 @@ function spin() {
         spinning = false;
         $('spinBtn').disabled = false;
 
-        // Сначала очищаем pending, потом показываем результат
         state.pending = null;
         save();
 
@@ -1134,7 +1183,7 @@ function spin() {
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        update(); // ← баланс показывается после остановки
+        update();
 
         if (state.balance < 1) {
             if (state.balance < 0) { state.balance = 0; save(); update(); }
@@ -1212,6 +1261,53 @@ slider.addEventListener('pointermove', e => {
 slider.addEventListener('pointerup', e => {
     dragging = false;
     try { slider.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+// ============================================================
+// ПОЛЕ ВВОДА ВЫИГРЫША
+// ============================================================
+$('winInputField').addEventListener('input', e => {
+    // Оставляем только цифры и точку
+    let v = e.target.value.replace(/[^\d.]/g, '');
+    // Только одна точка
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    e.target.value = v;
+
+    const num = parseFloat(v);
+    if (isNaN(num) || num <= 0) return;
+
+    // Если выигрыш <= ставке — игнорируем
+    if (num <= bet) return;
+
+    // Если шанс превышает 80% — ограничиваем
+    const chance = (bet / num) * 100;
+    if (chance > 80) {
+        win = bet * (100 / 80);
+    } else {
+        win = num;
+    }
+    updateStats();
+    updateWheel();
+});
+
+$('winInputField').addEventListener('blur', () => {
+    // На выходе из поля — форматируем и фиксируем
+    const num = parseFloat($('winInputField').value);
+    if (isNaN(num) || num <= bet) {
+        win = bet * 1.25;
+    } else if ((bet / num) * 100 > 80) {
+        win = bet * (100 / 80);
+    } else {
+        win = num;
+    }
+    update();
+});
+
+$('winInputField').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        e.target.blur();
+    }
 });
 
 // ============================================================
@@ -1324,7 +1420,6 @@ $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 
-// Восстановление после обновления
 if (state.pending) {
     const p = state.pending;
 
@@ -1338,7 +1433,6 @@ if (state.pending) {
             : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
     }, 100);
 
-    // Сразу очищаем pending, чтобы баланс показался
     state.pending = null;
     save();
 
