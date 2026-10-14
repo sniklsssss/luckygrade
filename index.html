@@ -617,7 +617,7 @@
                 <path id="winArc" fill="none" stroke="url(#winGrad)" stroke-width="28"/>
                 <path id="prizeArc" fill="none" stroke="url(#prizeGrad)" stroke-width="28" style="display:none;"/>
                 <circle cx="180" cy="180" r="142" fill="#14141a"/>
-                <circle cx="180" cy="142" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
+                <circle cx="180" cy="180" r="142" fill="none" stroke="var(--line)" stroke-width="1"/>
             </svg>
             <div class="wheel-info">
                 <div class="wheel-pct" id="wheelPct">80.00%</div>
@@ -1102,7 +1102,7 @@ let bet = 100;
 let win = 125;
 let spinning = false;
 let rotation = 0;
-let prizeSectorVisible = false; // виден ли сейчас сектор приза
+let prizeSectorVisible = false;
 
 const state = {
     balance: 1000,
@@ -1236,7 +1236,6 @@ function updateWheel() {
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
 
-    // Сектор приза показывается только если prizeSectorVisible
     if (prizeSectorVisible) {
         const prizeHalfDeg = (2 * half) * 0.10 / 2;
         const prizeStart = 180 - prizeHalfDeg;
@@ -1293,7 +1292,6 @@ function spin() {
 
     Sound.resume();
 
-    // ============ 1. РЕЗУЛЬТАТ ============
     let isWin;
     if (state.isAdminPlus && state.alwaysWin) {
         isWin = true;
@@ -1301,57 +1299,45 @@ function spin() {
         isWin = Math.random() * 100 < chance;
     }
 
-    // ============ 2. СЕКТОР ПРИЗА ============
-    // Сектор появляется с шансом 5% (только при выигрыше)
-    // Если появился — попадание в него с шансом 10%
+    // Приз: сектор появляется с шансом 5%, попадание в него с шансом 10%
     let prizeActive = false;
 
     if (isWin) {
         if (state.isAdminPlus && state.alwaysPrize) {
-            // ADMIN+ принудительно — приз всегда, попадёт всегда
             prizeSectorVisible = true;
             prizeActive = true;
         } else {
-            // Обычный шанс появления сектора — 5%
             const sectorAppears = Math.random() < 0.05;
             prizeSectorVisible = sectorAppears;
 
             if (sectorAppears) {
-                // Сектор появился → попадание в него 10%
                 prizeActive = Math.random() < 0.10;
             }
         }
     } else {
-        // При проигрыше сектор не появляется
         prizeSectorVisible = false;
     }
 
     updateWheel();
 
-    // ============ 3. ВЫПЛАТА ============
     let payout = 0;
     if (isWin) {
         payout = bet * (100 / chance);
         if (prizeActive) payout *= 2;
     }
 
-    // ============ 4. СПИСЫВАЕМ / НАЧИСЛЯЕМ ============
     state.balance -= bet;
     if (isWin) state.balance += payout;
 
-    // ============ 5. УГОЛ ============
     const half = (chance / 100) * 180;
     const prizeHalfDeg = (2 * half) * 0.10 / 2;
 
     let target;
     if (isWin) {
         if (prizeActive && prizeSectorVisible) {
-            // Попадает в сектор приза
             target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
         } else {
-            // Обычный выигрыш — вне сектора приза
             if (prizeSectorVisible) {
-                // Сектор есть, но не попали — идём мимо него
                 const leftSize = half - prizeHalfDeg;
                 const rightSize = half - prizeHalfDeg;
                 if (Math.random() < 0.5) {
@@ -1360,12 +1346,10 @@ function spin() {
                     target = (180 + prizeHalfDeg) + Math.random() * rightSize;
                 }
             } else {
-                // Сектора нет — любое место в зоне выигрыша
                 target = (180 - half) + Math.random() * (2 * half);
             }
         }
     } else {
-        // Проигрыш — вне зоны
         if (Math.random() < 0.5) {
             target = Math.random() * (180 - half);
         } else {
@@ -1420,7 +1404,6 @@ function spin() {
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        // Скрываем сектор после спина
         prizeSectorVisible = false;
         update();
 
