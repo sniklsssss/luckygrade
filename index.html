@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roulette</title>
+<meta name="description" content="Roulette — апгрейд скинов с шансом до 80%. Крути колесо, забирай множитель, получай кэшбек при проигрыше.">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -157,8 +158,6 @@
         z-index: 10;
         pointer-events: none;
     }
-    /* Стрелка торчит над кольцом: кончик на 172px от центра,
-       кольцо на 165 (внутренний) — 179 (внешний). Острие заходит на кольцо. */
     .arrow {
         position: absolute;
         left: -10px;
@@ -634,6 +633,13 @@
                 <div class="toggle" id="fastToggle"></div>
             </div>
         </div>
+        <div class="card">
+            <h3>Звук</h3>
+            <div class="toggle-row">
+                <span>Звуковые эффекты</span>
+                <div class="toggle on" id="soundToggle"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -650,6 +656,196 @@
 <script>
 const $ = id => document.getElementById(id);
 
+// ============================================================
+// ЗВУКИ (Web Audio API — без файлов)
+// ============================================================
+const Sound = (() => {
+    let ctx = null;
+    let enabled = true;
+
+    function getCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+    }
+
+    function tone(freq, duration, type = 'sine', volume = 0.15, when = 0) {
+        if (!enabled) return;
+        const c = getCtx();
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, c.currentTime + when);
+        gain.gain.setValueAtTime(0, c.currentTime + when);
+        gain.gain.linearRampToValueAtTime(volume, c.currentTime + when + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + when + duration);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(c.currentTime + when);
+        osc.stop(c.currentTime + when + duration + 0.02);
+    }
+
+    function noise(duration, volume = 0.1) {
+        if (!enabled) return;
+        const c = getCtx();
+        const bufferSize = Math.floor(c.sampleRate * duration);
+        const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+        }
+        const source = c.createBufferSource();
+        source.buffer = buffer;
+        const gain = c.createGain();
+        gain.gain.value = volume;
+        source.connect(gain);
+        gain.connect(c.destination);
+        source.start();
+    }
+
+    return {
+        setEnabled(v) { enabled = v; },
+        isEnabled() { return enabled; },
+
+        click() {
+            tone(800, 0.05, 'square', 0.06);
+        },
+
+        tick(intensity = 1) {
+            tone(1200 + Math.random() * 300, 0.03, 'square', 0.04 * intensity);
+        },
+
+        // САЛЮТ при выигрыше
+        win() {
+            if (!enabled) return;
+            const c = getCtx();
+
+            const bursts = [
+                { time: 0.00, vol: 0.22, dur: 0.35 },
+                { time: 0.18, vol: 0.18, dur: 0.30 },
+                { time: 0.42, vol: 0.25, dur: 0.40 },
+                { time: 0.68, vol: 0.16, dur: 0.28 },
+                { time: 0.95, vol: 0.20, dur: 0.35 },
+                { time: 1.20, vol: 0.14, dur: 0.25 },
+            ];
+
+            bursts.forEach(b => {
+                const bufSize = Math.floor(c.sampleRate * b.dur);
+                const buffer = c.createBuffer(1, bufSize, c.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufSize; i++) {
+                    const t = i / bufSize;
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.5);
+                }
+
+                const src = c.createBufferSource();
+                src.buffer = buffer;
+
+                const filt = c.createBiquadFilter();
+                filt.type = 'lowpass';
+                filt.frequency.setValueAtTime(2000, c.currentTime + b.time);
+                filt.frequency.exponentialRampToValueAtTime(200, c.currentTime + b.time + b.dur);
+
+                const gain = c.createGain();
+                gain.gain.setValueAtTime(0, c.currentTime + b.time);
+                gain.gain.linearRampToValueAtTime(b.vol, c.currentTime + b.time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + b.time + b.dur);
+
+                src.connect(filt);
+                filt.connect(gain);
+                gain.connect(c.destination);
+                src.start(c.currentTime + b.time);
+                src.stop(c.currentTime + b.time + b.dur + 0.05);
+
+                // Низкий "бум"
+                const boom = c.createOscillator();
+                const boomGain = c.createGain();
+                boom.type = 'sine';
+                boom.frequency.setValueAtTime(120, c.currentTime + b.time);
+                boom.frequency.exponentialRampToValueAtTime(40, c.currentTime + b.time + 0.3);
+                boomGain.gain.setValueAtTime(0, c.currentTime + b.time);
+                boomGain.gain.linearRampToValueAtTime(b.vol * 0.8, c.currentTime + b.time + 0.01);
+                boomGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + b.time + 0.35);
+                boom.connect(boomGain);
+                boomGain.connect(c.destination);
+                boom.start(c.currentTime + b.time);
+                boom.stop(c.currentTime + b.time + 0.4);
+
+                // Эхо 1
+                const echoDelay = 0.15;
+                const echoSrc = c.createBufferSource();
+                echoSrc.buffer = buffer;
+                const echoFilt = c.createBiquadFilter();
+                echoFilt.type = 'lowpass';
+                echoFilt.frequency.value = 800;
+                const echoGainNode = c.createGain();
+                echoGainNode.gain.setValueAtTime(b.vol * 0.35, c.currentTime + b.time + echoDelay);
+                echoGainNode.gain.exponentialRampToValueAtTime(0.001, c.currentTime + b.time + echoDelay + b.dur);
+                echoSrc.connect(echoFilt);
+                echoFilt.connect(echoGainNode);
+                echoGainNode.connect(c.destination);
+                echoSrc.start(c.currentTime + b.time + echoDelay);
+                echoSrc.stop(c.currentTime + b.time + echoDelay + b.dur + 0.05);
+
+                // Эхо 2
+                const echo2 = c.createBufferSource();
+                echo2.buffer = buffer;
+                const echo2Gain = c.createGain();
+                echo2Gain.gain.setValueAtTime(b.vol * 0.15, c.currentTime + b.time + echoDelay * 2);
+                echo2Gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + b.time + echoDelay * 2 + b.dur);
+                echo2.connect(echo2Gain);
+                echo2Gain.connect(c.destination);
+                echo2.start(c.currentTime + b.time + echoDelay * 2);
+                echo2.stop(c.currentTime + b.time + echoDelay * 2 + b.dur + 0.05);
+            });
+
+            // Финальные искры
+            tone(880, 0.5, 'triangle', 0.08, 1.4);
+            tone(1174, 0.6, 'triangle', 0.06, 1.5);
+            tone(1568, 0.8, 'triangle', 0.05, 1.6);
+        },
+
+        lose() {
+            tone(400, 0.15, 'sawtooth', 0.12, 0);
+            tone(300, 0.2, 'sawtooth', 0.12, 0.1);
+            tone(200, 0.35, 'sawtooth', 0.1, 0.25);
+        },
+
+        cashback() {
+            tone(1200, 0.08, 'triangle', 0.15, 0);
+            tone(1500, 0.08, 'triangle', 0.15, 0.08);
+            tone(1800, 0.15, 'triangle', 0.15, 0.16);
+        },
+
+        crash() {
+            noise(0.5, 0.2);
+            tone(80, 0.8, 'sawtooth', 0.2, 0);
+            tone(60, 1.0, 'sawtooth', 0.15, 0.1);
+            tone(40, 1.2, 'sine', 0.15, 0.2);
+        },
+
+        startSpinTicks(durationMs) {
+            if (!enabled) return;
+            let stopped = false;
+            const startTime = performance.now();
+            const tickFn = () => {
+                if (stopped) return;
+                const elapsed = performance.now() - startTime;
+                if (elapsed > durationMs) return;
+                const progress = elapsed / durationMs;
+                const delay = 30 + Math.pow(progress, 3) * 400;
+                Sound.tick(0.5 + progress * 0.5);
+                setTimeout(tickFn, delay);
+            };
+            setTimeout(tickFn, 30);
+            return () => { stopped = true; };
+        },
+    };
+})();
+
+// ============================================================
+// ИГРА
+// ============================================================
 let bet = 100;
 let win = 125;
 let spinning = false;
@@ -662,9 +858,10 @@ const state = {
     usedPromos: [],
     arrowColor: '#c23a2b',
     fastSpin: false,
+    soundOn: true,
 };
 
-const LS_KEY = 'roulette_state_v1';
+const LS_KEY = 'roulette_state_v2';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -676,16 +873,12 @@ function load() {
     } catch(e) {}
 }
 
-// ============================================================
-// UI
-// ============================================================
 function update() {
     $('balanceTop').textContent = state.balance.toFixed(2);
     $('balanceTop').classList.toggle('zero', state.balance <= 0);
     $('nickDisplay').textContent = state.nickname || 'Гость';
     $('avatarLetter').textContent = (state.nickname || '?').charAt(0).toUpperCase();
     $('adminTag').style.display = state.isAdmin ? 'inline-block' : 'none';
-
     updateWheel();
     updateStats();
     updateSlider();
@@ -763,22 +956,18 @@ function updateWheel() {
     $('spinBtn').disabled = spinning || chance > 80;
 }
 
-// ============================================================
-// МНОЖИТЕЛИ
-// ============================================================
 function applyMult(m) {
+    Sound.click();
     win = bet * m;
     if ((bet / win) * 100 > 80) win = bet * (100 / 80);
     update();
 }
 function applyPercent(p) {
+    Sound.click();
     win = bet * (100 / p);
     update();
 }
 
-// ============================================================
-// ВРАЩЕНИЕ
-// ============================================================
 function spin() {
     if (spinning) return;
     if (bet <= 0) return;
@@ -819,6 +1008,7 @@ function spin() {
     $('arrowRot').style.transform = `rotate(${rotation}deg)`;
 
     const duration = state.fastSpin ? 3000 : 6000;
+    Sound.startSpinTicks(duration);
 
     setTimeout(() => {
         spinning = false;
@@ -830,19 +1020,16 @@ function spin() {
             save();
             update();
             showResult('+' + payout.toFixed(2), true);
+            Sound.win();
         } else {
             update();
             showResult('-' + bet.toFixed(2), false);
+            Sound.lose();
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        // КРАШ: после любого исхода, если баланс ушёл в 0 или минус
         if (state.balance <= 0) {
-            if (state.balance < 0) {
-                state.balance = 0;
-                save();
-                update();
-            }
+            if (state.balance < 0) { state.balance = 0; save(); update(); }
             setTimeout(() => triggerCrash(bet), 400);
         }
     }, duration + 100);
@@ -853,9 +1040,6 @@ function showResult(text, win_) {
     $('statResult').className = 'result ' + (win_ ? 'win' : 'lose');
 }
 
-// ============================================================
-// КЭШБЕК
-// ============================================================
 function triggerCashback(b) {
     const roll = Math.random() * 100;
     let pct = 0;
@@ -869,15 +1053,14 @@ function triggerCashback(b) {
     save();
     update();
     showResult('Кэшбек +' + amount.toFixed(2), true);
+    Sound.cashback();
 }
 
-// ============================================================
-// КРАШ
-// ============================================================
 function triggerCrash(b) {
     $('crashBet').textContent = b.toFixed(2);
     $('crashResult').textContent = state.balance.toFixed(2);
     $('crashOverlay').classList.add('active');
+    Sound.crash();
 }
 
 function restartAfterCrash() {
@@ -932,6 +1115,7 @@ slider.addEventListener('pointerup', e => {
 // ============================================================
 document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
+        Sound.click();
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         btn.classList.add('active');
@@ -972,6 +1156,7 @@ function applyPromo() {
         msg.textContent = 'Активировано. +10000, статус ADMIN';
         msg.className = 'promo-msg ok';
         $('promoInput').value = '';
+        Sound.win();
         return;
     }
     msg.textContent = 'Неверный промокод';
@@ -993,7 +1178,7 @@ function setArrowColor(color) {
 
 $('customColor').addEventListener('input', e => setArrowColor(e.target.value));
 document.querySelectorAll('.color-dot').forEach(d => {
-    d.addEventListener('click', () => setArrowColor(d.dataset.color));
+    d.addEventListener('click', () => { Sound.click(); setArrowColor(d.dataset.color); });
 });
 
 $('fastToggle').addEventListener('click', () => {
@@ -1002,6 +1187,15 @@ $('fastToggle').addEventListener('click', () => {
     $('arrowRot').style.transition = state.fastSpin
         ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
         : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+    Sound.click();
+    save();
+});
+
+$('soundToggle').addEventListener('click', () => {
+    state.soundOn = !state.soundOn;
+    $('soundToggle').classList.toggle('on', state.soundOn);
+    Sound.setEnabled(state.soundOn);
+    if (state.soundOn) Sound.click();
     save();
 });
 
@@ -1018,6 +1212,8 @@ $('fastToggle').classList.toggle('on', state.fastSpin);
 if (state.fastSpin) {
     $('arrowRot').style.transition = 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)';
 }
+$('soundToggle').classList.toggle('on', state.soundOn !== false);
+Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 update();
 
