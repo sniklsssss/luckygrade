@@ -706,20 +706,17 @@ const Sound = (() => {
     return {
         setEnabled(v) { enabled = v; },
         isEnabled() { return enabled; },
+        resume() { getCtx(); },
 
-        click() {
-            tone(800, 0.05, 'square', 0.06);
-        },
+        click() { tone(800, 0.05, 'square', 0.06); },
 
         tick(intensity = 1) {
             tone(1200 + Math.random() * 300, 0.03, 'square', 0.04 * intensity);
         },
 
-        // САЛЮТ при выигрыше
         win() {
             if (!enabled) return;
             const c = getCtx();
-
             const bursts = [
                 { time: 0.00, vol: 0.22, dur: 0.35 },
                 { time: 0.18, vol: 0.18, dur: 0.30 },
@@ -728,7 +725,6 @@ const Sound = (() => {
                 { time: 0.95, vol: 0.20, dur: 0.35 },
                 { time: 1.20, vol: 0.14, dur: 0.25 },
             ];
-
             bursts.forEach(b => {
                 const bufSize = Math.floor(c.sampleRate * b.dur);
                 const buffer = c.createBuffer(1, bufSize, c.sampleRate);
@@ -737,27 +733,22 @@ const Sound = (() => {
                     const t = i / bufSize;
                     data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.5);
                 }
-
                 const src = c.createBufferSource();
                 src.buffer = buffer;
-
                 const filt = c.createBiquadFilter();
                 filt.type = 'lowpass';
                 filt.frequency.setValueAtTime(2000, c.currentTime + b.time);
                 filt.frequency.exponentialRampToValueAtTime(200, c.currentTime + b.time + b.dur);
-
                 const gain = c.createGain();
                 gain.gain.setValueAtTime(0, c.currentTime + b.time);
                 gain.gain.linearRampToValueAtTime(b.vol, c.currentTime + b.time + 0.01);
                 gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + b.time + b.dur);
-
                 src.connect(filt);
                 filt.connect(gain);
                 gain.connect(c.destination);
                 src.start(c.currentTime + b.time);
                 src.stop(c.currentTime + b.time + b.dur + 0.05);
 
-                // Низкий "бум"
                 const boom = c.createOscillator();
                 const boomGain = c.createGain();
                 boom.type = 'sine';
@@ -771,7 +762,6 @@ const Sound = (() => {
                 boom.start(c.currentTime + b.time);
                 boom.stop(c.currentTime + b.time + 0.4);
 
-                // Эхо 1
                 const echoDelay = 0.15;
                 const echoSrc = c.createBufferSource();
                 echoSrc.buffer = buffer;
@@ -787,7 +777,6 @@ const Sound = (() => {
                 echoSrc.start(c.currentTime + b.time + echoDelay);
                 echoSrc.stop(c.currentTime + b.time + echoDelay + b.dur + 0.05);
 
-                // Эхо 2
                 const echo2 = c.createBufferSource();
                 echo2.buffer = buffer;
                 const echo2Gain = c.createGain();
@@ -798,8 +787,6 @@ const Sound = (() => {
                 echo2.start(c.currentTime + b.time + echoDelay * 2);
                 echo2.stop(c.currentTime + b.time + echoDelay * 2 + b.dur + 0.05);
             });
-
-            // Финальные искры
             tone(880, 0.5, 'triangle', 0.08, 1.4);
             tone(1174, 0.6, 'triangle', 0.06, 1.5);
             tone(1568, 0.8, 'triangle', 0.05, 1.6);
@@ -859,9 +846,10 @@ const state = {
     arrowColor: '#c23a2b',
     fastSpin: false,
     soundOn: true,
+    pending: null,
 };
 
-const LS_KEY = 'roulette_state_v2';
+const LS_KEY = 'roulette_state_v3';
 
 function save() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -957,17 +945,27 @@ function updateWheel() {
 }
 
 function applyMult(m) {
+    Sound.resume();
     Sound.click();
     win = bet * m;
     if ((bet / win) * 100 > 80) win = bet * (100 / 80);
     update();
 }
 function applyPercent(p) {
+    Sound.resume();
     Sound.click();
     win = bet * (100 / p);
     update();
 }
 
+function showResult(text, win_) {
+    $('statResult').textContent = text;
+    $('statResult').className = 'result ' + (win_ ? 'win' : 'lose');
+}
+
+// ============================================================
+// SPIN — результат считается СРАЗУ, анимация отдельно
+// ============================================================
 function spin() {
     if (spinning) return;
     if (bet <= 0) return;
@@ -979,18 +977,18 @@ function spin() {
     const chance = getChance();
     if (chance > 80) { showResult('Шанс > 80%', false); return; }
 
-    state.balance -= bet;
-    save();
-    update();
+    Sound.resume();
 
-    spinning = true;
-    $('spinBtn').disabled = true;
-    $('statResult').textContent = '';
-    $('statResult').className = 'result';
-
-    const half = (chance / 100) * 180;
+    // ============ 1. ОПРЕДЕЛЯЕМ РЕЗУЛЬТАТ СРАЗУ ============
     const isWin = Math.random() * 100 < chance;
+    const payout = isWin ? bet * (100 / chance) : 0;
 
+    // ============ 2. СПИСЫВАЕМ/НАЧИСЛЯЕМ СРАЗУ ============
+    state.balance -= bet;
+    if (isWin) state.balance += payout;
+
+    // ============ 3. СЧИТАЕМ УГОЛ ДЛЯ АНИМАЦИИ ============
+    const half = (chance / 100) * 180;
     let target;
     if (isWin) {
         target = (180 - half) + Math.random() * (2 * half);
@@ -1005,6 +1003,25 @@ function spin() {
     if (delta < 0) delta += 360;
     rotation += turns * 360 + delta;
 
+    // ============ 4. СОХРАНЯЕМ PENDING (для восстановления после обновления) ============
+    state.pending = {
+        bet: bet,
+        win: win,
+        chance: chance,
+        isWin: isWin,
+        payout: payout,
+        rotation: rotation,
+        timestamp: Date.now(),
+    };
+    save();
+    update();
+
+    // ============ 5. ПРОИГРЫВАЕМ АНИМАЦИЮ ============
+    spinning = true;
+    $('spinBtn').disabled = true;
+    $('statResult').textContent = '';
+    $('statResult').className = 'result';
+
     $('arrowRot').style.transform = `rotate(${rotation}deg)`;
 
     const duration = state.fastSpin ? 3000 : 6000;
@@ -1015,31 +1032,29 @@ function spin() {
         $('spinBtn').disabled = false;
 
         if (isWin) {
-            const payout = bet * (100 / chance);
-            state.balance += payout;
-            save();
-            update();
             showResult('+' + payout.toFixed(2), true);
             Sound.win();
         } else {
-            update();
             showResult('-' + bet.toFixed(2), false);
             Sound.lose();
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
 
-        if (state.balance <= 0) {
+        // Очищаем pending
+        state.pending = null;
+        save();
+
+        // Проверяем краш
+        if (state.balance < 1) {
             if (state.balance < 0) { state.balance = 0; save(); update(); }
-            setTimeout(() => triggerCrash(bet), 400);
+            setTimeout(() => triggerCrash(bet), 600);
         }
     }, duration + 100);
 }
 
-function showResult(text, win_) {
-    $('statResult').textContent = text;
-    $('statResult').className = 'result ' + (win_ ? 'win' : 'lose');
-}
-
+// ============================================================
+// КЭШБЕК
+// ============================================================
 function triggerCashback(b) {
     const roll = Math.random() * 100;
     let pct = 0;
@@ -1056,6 +1071,9 @@ function triggerCashback(b) {
     Sound.cashback();
 }
 
+// ============================================================
+// КРАШ
+// ============================================================
 function triggerCrash(b) {
     $('crashBet').textContent = b.toFixed(2);
     $('crashResult').textContent = state.balance.toFixed(2);
@@ -1068,6 +1086,7 @@ function restartAfterCrash() {
     state.nickname = '';
     state.isAdmin = false;
     state.usedPromos = [];
+    state.pending = null;
     bet = 100;
     win = 125;
     save();
@@ -1115,6 +1134,7 @@ slider.addEventListener('pointerup', e => {
 // ============================================================
 document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
+        Sound.resume();
         Sound.click();
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1141,6 +1161,7 @@ function saveNick() {
 function applyPromo() {
     const code = $('promoInput').value.trim();
     const msg = $('promoMsg');
+    Sound.resume();
 
     if (code === 'TEST-5106') {
         if (state.usedPromos.includes('TEST-5106')) {
@@ -1178,7 +1199,7 @@ function setArrowColor(color) {
 
 $('customColor').addEventListener('input', e => setArrowColor(e.target.value));
 document.querySelectorAll('.color-dot').forEach(d => {
-    d.addEventListener('click', () => { Sound.click(); setArrowColor(d.dataset.color); });
+    d.addEventListener('click', () => { Sound.resume(); Sound.click(); setArrowColor(d.dataset.color); });
 });
 
 $('fastToggle').addEventListener('click', () => {
@@ -1187,6 +1208,7 @@ $('fastToggle').addEventListener('click', () => {
     $('arrowRot').style.transition = state.fastSpin
         ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
         : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+    Sound.resume();
     Sound.click();
     save();
 });
@@ -1195,7 +1217,7 @@ $('soundToggle').addEventListener('click', () => {
     state.soundOn = !state.soundOn;
     $('soundToggle').classList.toggle('on', state.soundOn);
     Sound.setEnabled(state.soundOn);
-    if (state.soundOn) Sound.click();
+    if (state.soundOn) { Sound.resume(); Sound.click(); }
     save();
 });
 
@@ -1203,6 +1225,7 @@ $('soundToggle').addEventListener('click', () => {
 // СТАРТ
 // ============================================================
 load();
+
 document.documentElement.style.setProperty('--arrow', state.arrowColor);
 $('customColor').value = state.arrowColor;
 document.querySelectorAll('.color-dot').forEach(d => {
@@ -1215,8 +1238,44 @@ if (state.fastSpin) {
 $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
-update();
 
+// ============ ВОССТАНОВЛЕНИЕ ПОСЛЕ ОБНОВЛЕНИЯ ============
+if (state.pending) {
+    const p = state.pending;
+
+    // Ставим стрелку сразу на финальный угол (без анимации)
+    $('arrowRot').style.transition = 'none';
+    $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
+    rotation = p.rotation;
+
+    // Сбрасываем анимацию на будущее
+    setTimeout(() => {
+        $('arrowRot').style.transition = state.fastSpin
+            ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
+            : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+    }, 100);
+
+    // Показываем результат через маленькую задержку
+    setTimeout(() => {
+        if (p.isWin) {
+            showResult('+' + p.payout.toFixed(2), true);
+        } else {
+            showResult('-' + p.bet.toFixed(2), false);
+        }
+    }, 300);
+
+    // Очищаем pending
+    state.pending = null;
+    save();
+
+    // Проверяем краш
+    if (state.balance < 1) {
+        if (state.balance < 0) state.balance = 0;
+        setTimeout(() => triggerCrash(p.bet), 600);
+    }
+}
+
+update();
 $('spinBtn').addEventListener('click', spin);
 </script>
 </body>
