@@ -3,177 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roulette</title>
-<meta name="description" content="Roulette — апгрейд скинов с шансом до 80%.">
+<title>LuckyGrade</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-        --bg: #0d0d10;
-        --bg2: #131318;
-        --line: #1f1f26;
-        --line2: #2a2a33;
-        --text: #e8e8ec;
-        --muted: #6b6b78;
-        --dim: #3a3a44;
-        --red: #c23a2b;
-        --red-bright: #e54a35;
-        --gold: #c9942c;
-        --gold-bright: #e5b73c;
-        --green: #6fa32c;
-        --arrow: #c23a2b;
-        --admin-plus: #e5a020;
+        --bg: #0d0d10; --bg2: #131318; --line: #1f1f26; --line2: #2a2a33;
+        --text: #e8e8ec; --muted: #6b6b78; --dim: #3a3a44;
+        --red: #c23a2b; --red-bright: #e54a35; --gold: #c9942c;
+        --green: #6fa32c; --arrow: #c23a2b;
+        --tester: #22b8a0; --admin-plus: #e5a020;
     }
-
     html, body {
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        user-select: none;
-        -webkit-font-smoothing: antialiased;
+        background: var(--bg); color: var(--text); min-height: 100vh;
+        font-family: 'Inter', sans-serif; font-size: 14px;
+        user-select: none; -webkit-font-smoothing: antialiased;
     }
+    body { padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-    body {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    /* ============ ХЕДЕР ============ */
     .header {
-        width: 100%;
-        max-width: 1080px;
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        padding: 12px 18px;
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        margin-bottom: 24px;
+        width: 100%; max-width: 1080px;
+        display: grid; grid-template-columns: 1fr auto 1fr;
+        align-items: center; padding: 12px 18px;
+        background: var(--bg2); border: 1px solid var(--line); margin-bottom: 24px;
     }
     .user-block { display: flex; align-items: center; gap: 10px; }
     .avatar {
-        width: 32px; height: 32px;
-        background: var(--red);
+        width: 32px; height: 32px; background: var(--red);
         display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 13px; color: #fff;
-        flex-shrink: 0;
+        font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;
     }
-    .avatar.admin-plus {
-        background: linear-gradient(135deg, #e5a020, #c23a2b);
-        box-shadow: 0 0 12px rgba(229, 160, 32, 0.6);
-    }
+    .avatar.tester { background: linear-gradient(135deg, #22b8a0, #128070); box-shadow: 0 0 12px rgba(34,184,160,0.6); }
+    .avatar.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); box-shadow: 0 0 12px rgba(229,160,32,0.6); }
     .nick-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .admin-tag {
-        background: var(--red); color: #fff;
-        font-size: 9px; font-weight: 700;
-        padding: 2px 5px;
-        text-transform: uppercase; letter-spacing: 0.8px;
+        background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+        padding: 2px 5px; text-transform: uppercase; letter-spacing: 0.8px;
     }
-    .admin-tag.admin-plus {
-        background: linear-gradient(135deg, #e5a020, #c23a2b);
-        color: #fff;
-        box-shadow: 0 0 8px rgba(229, 160, 32, 0.6);
-    }
-    .nick {
-        font-weight: 600; font-size: 14px; color: var(--text);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .tabs {
-        display: flex; gap: 0;
-        background: var(--bg);
-        border: 1px solid var(--line);
-    }
+    .admin-tag.tester { background: linear-gradient(135deg, #22b8a0, #128070); box-shadow: 0 0 8px rgba(34,184,160,0.6); }
+    .admin-tag.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); box-shadow: 0 0 8px rgba(229,160,32,0.6); }
+    .nick { font-weight: 600; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tabs { display: flex; gap: 0; background: var(--bg); border: 1px solid var(--line); }
     .tabs button {
-        padding: 8px 20px;
-        background: transparent; border: none;
-        color: var(--muted);
-        font-size: 12px; font-weight: 600;
-        font-family: inherit;
-        text-transform: uppercase; letter-spacing: 1.2px;
-        cursor: pointer;
-        transition: color 0.15s, background 0.15s;
+        padding: 8px 16px; background: transparent; border: none;
+        color: var(--muted); font-size: 12px; font-weight: 600;
+        font-family: inherit; text-transform: uppercase; letter-spacing: 1.2px;
+        cursor: pointer; transition: color 0.15s, background 0.15s;
         border-right: 1px solid var(--line);
     }
     .tabs button:last-child { border-right: none; }
     .tabs button:hover { color: var(--text); }
     .tabs button.active { background: var(--red); color: #fff; }
-    .balance-block {
-        text-align: right;
-        font-size: 12px;
-        color: var(--muted);
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-    }
+    .balance-block { text-align: right; font-size: 12px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
     .balance-block b {
-        display: block;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 16px; font-weight: 700;
-        color: var(--green);
+        display: block; font-family: 'JetBrains Mono', monospace;
+        font-size: 16px; font-weight: 700; color: var(--green);
         letter-spacing: 0; margin-top: 2px;
     }
     .balance-block b.zero { color: var(--red); }
     .balance-block b.hidden { color: var(--muted); }
 
-    /* ============ ЭКРАНЫ ============ */
     .screen { display: none; width: 100%; }
     .screen.active { display: block; }
 
-    /* ============ ИГРА ============ */
-    .game {
-        display: flex; flex-direction: column; align-items: center;
-        gap: 22px;
-        max-width: 1080px; margin: 0 auto;
-    }
-    .wheel-wrap {
-        position: relative;
-        width: 360px; height: 360px;
-        flex-shrink: 0;
-        margin-top: 20px;
-    }
-    .wheel-svg {
-        position: absolute; inset: 0;
-        width: 100%; height: 100%;
-        overflow: visible;
-    }
+    .game { display: flex; flex-direction: column; align-items: center; gap: 22px; max-width: 1080px; margin: 0 auto; }
+    .wheel-wrap { position: relative; width: 360px; height: 360px; flex-shrink: 0; margin-top: 20px; }
+    .wheel-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .wheel-info {
-        position: absolute; inset: 0;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        pointer-events: none;
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; pointer-events: none;
     }
     .wheel-pct {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 44px; font-weight: 700;
-        color: var(--text); line-height: 1;
-        letter-spacing: -1px;
+        font-family: 'JetBrains Mono', monospace; font-size: 44px;
+        font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -1px;
     }
     .wheel-state {
-        font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 3px;
-        margin-top: 10px; color: var(--muted);
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 3px; margin-top: 10px; color: var(--muted);
     }
     .wheel-state.safe { color: var(--green); }
     .wheel-state.danger { color: var(--red-bright); }
-
     .arrow-rot {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 0; height: 0;
-        transform-origin: 0 0;
+        position: absolute; top: 50%; left: 50%;
+        width: 0; height: 0; transform-origin: 0 0;
         transition: transform 6s cubic-bezier(0.15, 0.85, 0.25, 1);
-        z-index: 10;
-        pointer-events: none;
+        z-index: 10; pointer-events: none;
     }
     .arrow {
-        position: absolute;
-        left: -10px;
-        bottom: 172px;
+        position: absolute; left: -10px; bottom: 172px;
         width: 0; height: 0;
         border-left: 10px solid transparent;
         border-right: 10px solid transparent;
@@ -181,110 +98,53 @@
         filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
     }
 
-    /* ============ ПАНЕЛЬ ============ */
-    .panel {
-        display: grid;
-        grid-template-columns: 1.3fr 1.5fr 1fr;
-        gap: 8px;
-        width: 100%; height: 72px;
-    }
+    .panel { display: grid; grid-template-columns: 1.3fr 1.5fr 1fr; gap: 8px; width: 100%; height: 72px; }
     .bet-panel {
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        padding: 12px 16px;
-        display: flex; flex-direction: column;
+        background: var(--bg2); border: 1px solid var(--line);
+        padding: 12px 16px; display: flex; flex-direction: column;
         justify-content: center; gap: 10px;
     }
     .bet-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        font-size: 11px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 1px;
-        color: var(--muted);
+        display: flex; justify-content: space-between; align-items: baseline;
+        font-size: 11px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 1px; color: var(--muted);
     }
-    .bet-val {
-        display: flex; align-items: baseline; gap: 6px;
-        font-family: 'JetBrains Mono', monospace;
-        color: var(--text); font-size: 13px;
-    }
+    .bet-val { display: flex; align-items: baseline; gap: 6px; font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: 13px; }
     .bet-val .max { color: var(--dim); font-size: 11px; }
 
-    .slider {
-        position: relative;
-        width: 100%; height: 20px;
-        cursor: grab;
-        display: flex; align-items: center;
-        touch-action: none;
-    }
+    .slider { position: relative; width: 100%; height: 20px; cursor: grab; display: flex; align-items: center; touch-action: none; }
     .slider:active { cursor: grabbing; }
     .slider::before {
-        content: '';
-        position: absolute;
-        left: 0; right: 0; top: 50%;
-        height: 3px;
-        transform: translateY(-50%);
-        background: var(--line2);
+        content: ''; position: absolute; left: 0; right: 0; top: 50%;
+        height: 3px; transform: translateY(-50%); background: var(--line2);
     }
     .slider-fill {
-        position: absolute;
-        left: 0; top: 50%;
-        height: 3px;
-        transform: translateY(-50%);
-        background: var(--red);
-        width: 0%;
-        pointer-events: none;
+        position: absolute; left: 0; top: 50%; height: 3px;
+        transform: translateY(-50%); background: var(--red); width: 0%; pointer-events: none;
     }
     .slider-knob {
-        position: absolute;
-        top: 50%;
-        width: 12px; height: 12px;
-        background: var(--text);
-        transform: translate(-50%, -50%);
-        left: 0%;
-        pointer-events: none;
-        transition: background 0.15s;
+        position: absolute; top: 50%; width: 12px; height: 12px;
+        background: var(--text); transform: translate(-50%, -50%); left: 0%;
+        pointer-events: none; transition: background 0.15s;
     }
     .slider:hover .slider-knob { background: var(--red-bright); }
 
     .upgrade {
-        background: #1a0f0d;
-        border: 1px solid #3a1a15;
-        color: #6a3028;
-        font-family: inherit;
-        font-size: 20px; font-weight: 900;
+        background: #1a0f0d; border: 1px solid #3a1a15; color: #6a3028;
+        font-family: inherit; font-size: 20px; font-weight: 900;
         letter-spacing: 3px; text-transform: uppercase;
-        cursor: pointer;
-        transition: all 0.15s;
-        height: 100%;
+        cursor: pointer; transition: all 0.15s; height: 100%;
     }
-    .upgrade:hover:not(:disabled) {
-        background: var(--red);
-        color: #fff;
-        border-color: var(--red-bright);
-    }
+    .upgrade:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red-bright); }
     .upgrade:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    .mult-panel {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 4px; height: 100%;
-    }
+    .mult-panel { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; height: 100%; }
     .mult {
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        color: var(--muted);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px; font-weight: 700;
-        cursor: pointer;
-        transition: all 0.15s;
-        padding: 0; height: 100%;
+        background: var(--bg2); border: 1px solid var(--line); color: var(--muted);
+        font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: all 0.15s; padding: 0; height: 100%;
     }
-    .mult:hover {
-        background: var(--line);
-        color: var(--text);
-        border-color: var(--line2);
-    }
+    .mult:hover { background: var(--line); color: var(--text); border-color: var(--line2); }
     .mult.p35 { border-color: #4a2420; color: #a04a3a; }
     .mult.p35:hover { background: #1a0f0d; color: var(--red-bright); border-color: var(--red); }
     .mult.p55 { border-color: #4a3a15; color: #a08030; }
@@ -293,128 +153,67 @@
     .mult.p75:hover { background: #0f1408; color: var(--green); border-color: var(--green); }
 
     .win-input-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        padding: 12px 18px;
-        background: var(--bg2);
-        border: 1px solid var(--line);
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        padding: 12px 18px; background: var(--bg2); border: 1px solid var(--line);
     }
     .win-input-row label {
-        font-size: 12px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        font-weight: 600;
-        flex-shrink: 0;
+        font-size: 12px; color: var(--muted); text-transform: uppercase;
+        letter-spacing: 1.2px; font-weight: 600; flex-shrink: 0;
     }
     .win-input-row input {
-        flex: 1;
-        background: var(--bg);
-        border: 1px solid var(--line);
-        padding: 10px 14px;
-        color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 15px;
-        font-weight: 700;
-        outline: none;
-        transition: border 0.15s;
-        text-align: right;
-        user-select: text;
+        flex: 1; background: var(--bg); border: 1px solid var(--line);
+        padding: 10px 14px; color: var(--text);
+        font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700;
+        outline: none; text-align: right; user-select: text;
     }
     .win-input-row input:focus { border-color: var(--red); }
     .win-input-row .hint {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        color: var(--dim);
-        flex-shrink: 0;
-        min-width: 80px;
-        text-align: right;
+        font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        color: var(--dim); flex-shrink: 0; min-width: 80px; text-align: right;
     }
 
     .stats {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        width: 100%;
-        padding: 12px 18px;
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        font-size: 12px;
-        color: var(--muted);
-        height: 44px;
-        align-items: center;
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+        width: 100%; padding: 12px 18px; background: var(--bg2);
+        border: 1px solid var(--line); font-size: 12px; color: var(--muted);
+        height: 44px; align-items: center;
     }
     .stats .item { display: flex; gap: 8px; align-items: baseline; }
-    .stats .item span {
-        font-family: 'JetBrains Mono', monospace;
-        color: var(--text); font-weight: 700;
-    }
+    .stats .item span { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 700; }
     .stats .result {
-        grid-column: 5;
-        text-align: right;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-size: 12px;
+        grid-column: 5; text-align: right; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px;
     }
     .stats .result.win { color: var(--green); }
     .stats .result.lose { color: var(--red-bright); }
-    .stats .result.prize { color: var(--gold); text-shadow: 0 0 10px rgba(201, 148, 44, 0.6); }
+    .stats .result.prize { color: var(--gold); text-shadow: 0 0 10px rgba(201,148,44,0.6); }
 
-    /* ============ КАРТОЧКИ ============ */
-    .cards {
-        max-width: 640px; margin: 0 auto;
-        display: flex; flex-direction: column; gap: 12px;
-    }
-    .card {
-        background: var(--bg2);
-        border: 1px solid var(--line);
-        padding: 22px;
-    }
+    .cards { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .card { background: var(--bg2); border: 1px solid var(--line); padding: 22px; }
     .card h3 {
-        font-size: 12px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 2px;
-        color: var(--red); margin-bottom: 18px;
+        font-size: 12px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--red); margin-bottom: 18px;
     }
-    .card.admin-plus h3 {
-        color: var(--admin-plus);
-        text-shadow: 0 0 10px rgba(229, 160, 32, 0.5);
-    }
-    .field {
-        display: flex; align-items: center; gap: 12px;
-        margin-bottom: 12px;
-    }
+    .card.admin-plus h3 { color: var(--admin-plus); text-shadow: 0 0 10px rgba(229,160,32,0.5); }
+    .field { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .field:last-child { margin-bottom: 0; }
     .field label {
-        font-size: 12px; color: var(--muted);
-        text-transform: uppercase; letter-spacing: 1px;
-        width: 160px; flex-shrink: 0;
+        font-size: 12px; color: var(--muted); text-transform: uppercase;
+        letter-spacing: 1px; width: 160px; flex-shrink: 0;
     }
     .field input[type="text"] {
-        flex: 1;
-        background: var(--bg);
-        border: 1px solid var(--line);
-        padding: 10px 14px;
-        color: var(--text);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 14px;
-        outline: none;
-        user-select: text;
+        flex: 1; background: var(--bg); border: 1px solid var(--line);
+        padding: 10px 14px; color: var(--text);
+        font-family: 'JetBrains Mono', monospace; font-size: 14px;
+        outline: none; user-select: text;
     }
     .field input[type="text"]:focus { border-color: var(--red); }
 
     .btn {
-        background: var(--red);
-        border: none;
-        padding: 10px 22px;
-        color: #fff;
-        font-family: inherit;
-        font-size: 12px; font-weight: 700;
+        background: var(--red); border: none; padding: 10px 22px; color: #fff;
+        font-family: inherit; font-size: 12px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 1.5px;
-        cursor: pointer;
-        transition: background 0.15s;
+        cursor: pointer; transition: background 0.15s;
     }
     .btn:hover { background: var(--red-bright); }
     .btn.green { background: var(--green); }
@@ -426,51 +225,26 @@
 
     .promo-row { display: flex; gap: 8px; }
     .promo-row input { flex: 1; }
-    .promo-msg {
-        margin-top: 10px;
-        font-size: 12px;
-        font-family: 'JetBrains Mono', monospace;
-        min-height: 16px;
-    }
+    .promo-msg { margin-top: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; min-height: 16px; }
     .promo-msg.ok { color: var(--green); }
     .promo-msg.err { color: var(--red-bright); }
-    .promo-msg.gold { color: var(--gold-bright); }
+    .promo-msg.gold { color: var(--gold); }
+    .promo-msg.tester { color: var(--tester); }
 
-    .color-row {
-        display: flex; gap: 8px; flex-wrap: wrap;
-        margin-top: 12px;
-    }
-    .color-dot {
-        width: 32px; height: 32px;
-        border: 1px solid var(--line2);
-        cursor: pointer;
-        padding: 0;
-    }
+    .color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .color-dot { width: 32px; height: 32px; border: 1px solid var(--line2); cursor: pointer; padding: 0; }
     .color-dot:hover { transform: scale(1.1); border-color: var(--text); }
     .color-dot.active { border-color: var(--text); border-width: 2px; }
 
-    .toggle-row {
-        display: flex; align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-    }
-    .toggle-row span {
-        font-size: 12px; color: var(--muted);
-        text-transform: uppercase; letter-spacing: 1px;
-    }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .toggle-row span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
     .toggle {
-        width: 44px; height: 24px;
-        background: var(--line);
-        border: 1px solid var(--line2);
-        position: relative;
-        cursor: pointer;
+        width: 44px; height: 24px; background: var(--line); border: 1px solid var(--line2);
+        position: relative; cursor: pointer;
     }
     .toggle::after {
-        content: '';
-        position: absolute;
-        top: 2px; left: 2px;
-        width: 18px; height: 18px;
-        background: var(--muted);
+        content: ''; position: absolute; top: 2px; left: 2px;
+        width: 18px; height: 18px; background: var(--muted);
         transition: transform 0.15s, background 0.15s;
     }
     .toggle.on { background: #2a1a15; border-color: var(--red); }
@@ -478,82 +252,67 @@
     .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
     .toggle.on.gold::after { background: var(--gold); }
 
-    /* ============ МОДАЛКА ============ */
+    .lb-wrap { max-width: 720px; margin: 0 auto; }
+    .lb-header {
+        display: grid; grid-template-columns: 70px 1fr 180px; gap: 12px;
+        padding: 12px 18px; background: var(--bg2); border: 1px solid var(--line);
+        font-size: 11px; color: var(--muted); text-transform: uppercase;
+        letter-spacing: 1.5px; font-weight: 600; margin-bottom: 8px;
+    }
+    .lb-header > div:nth-child(3) { text-align: right; }
+    .lb-row {
+        display: grid; grid-template-columns: 70px 1fr 180px; gap: 12px;
+        padding: 14px 18px; background: var(--bg2); border: 1px solid var(--line);
+        margin-bottom: 6px; align-items: center;
+    }
+    .lb-row.me { border-color: var(--tester); background: rgba(34,184,160,0.06); }
+    .lb-rank { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: var(--muted); }
+    .lb-rank.top1 { color: #e5a020; text-shadow: 0 0 8px rgba(229,160,32,0.5); }
+    .lb-rank.top2 { color: #c0c0c0; }
+    .lb-rank.top3 { color: #c08a4a; }
+    .lb-name { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text); min-width: 0; }
+    .lb-name .lb-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--green); text-align: right; }
+    .lb-empty { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 13px; background: var(--bg2); border: 1px solid var(--line); }
+
     .confirm-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.9);
+        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
         display: none; align-items: center; justify-content: center;
         z-index: 99998; backdrop-filter: blur(6px);
     }
-    .confirm-overlay.active { display: flex; animation: fadeIn 0.2s; }
+    .confirm-overlay.active { display: flex; }
     .confirm-box {
-        background: var(--bg2);
-        border: 2px solid var(--red);
-        padding: 32px 40px;
-        max-width: 480px;
-        text-align: center;
-        box-shadow: 0 0 60px rgba(194, 58, 43, 0.5);
-        animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    @keyframes popIn {
-        0% { transform: scale(0.7); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
+        background: var(--bg2); border: 2px solid var(--red);
+        padding: 32px 40px; max-width: 480px; text-align: center;
+        box-shadow: 0 0 60px rgba(194,58,43,0.5);
     }
     .confirm-title {
-        font-size: 22px; font-weight: 900;
-        text-transform: uppercase; letter-spacing: 3px;
-        color: var(--red-bright); margin-bottom: 12px;
+        font-size: 22px; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 3px; color: var(--red-bright); margin-bottom: 12px;
     }
-    .confirm-text {
-        font-size: 14px; color: var(--muted);
-        margin-bottom: 28px; line-height: 1.6;
-    }
+    .confirm-text { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
     .confirm-buttons { display: flex; gap: 12px; justify-content: center; }
     .confirm-buttons .btn { padding: 12px 28px; min-width: 120px; }
 
-    /* ============ КРАШ ============ */
     .crash-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0, 0, 0, 0.95);
+        position: fixed; inset: 0; background: rgba(0,0,0,0.95);
         display: none; align-items: center; justify-content: center;
-        z-index: 99999; backdrop-filter: blur(8px);
-        flex-direction: column;
+        z-index: 99999; backdrop-filter: blur(8px); flex-direction: column;
     }
-    .crash-overlay.active { display: flex; animation: fadeIn 0.4s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+    .crash-overlay.active { display: flex; }
     .crash-text {
-        font-family: 'Inter', sans-serif;
-        font-size: 96px; font-weight: 900;
-        color: var(--red-bright);
-        letter-spacing: -3px;
-        text-transform: uppercase;
-        animation: shake 0.4s;
-        text-shadow: 0 0 40px rgba(229, 74, 53, 0.8);
+        font-size: 96px; font-weight: 900; color: var(--red-bright);
+        letter-spacing: -3px; text-transform: uppercase;
+        text-shadow: 0 0 40px rgba(229,74,53,0.8);
     }
-    @keyframes shake {
-        0%, 100% { transform: translate(0, 0); }
-        20% { transform: translate(-6px, 4px); }
-        40% { transform: translate(6px, -4px); }
-        60% { transform: translate(-4px, -6px); }
-        80% { transform: translate(4px, 6px); }
-    }
-    .crash-sub {
-        margin-top: 16px; font-size: 16px; color: var(--muted);
-        text-transform: uppercase; letter-spacing: 4px; font-weight: 500;
-    }
-    .crash-info {
-        margin-top: 32px; font-family: 'JetBrains Mono', monospace;
-        font-size: 14px; color: var(--text); text-align: center; line-height: 2;
-    }
+    .crash-sub { margin-top: 16px; font-size: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: 4px; }
+    .crash-info { margin-top: 32px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); text-align: center; line-height: 2; }
     .crash-info b { color: var(--gold); }
     .crash-restart {
-        margin-top: 40px; background: var(--red);
-        border: none; padding: 14px 40px;
-        color: #fff; font-family: inherit;
-        font-size: 13px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 3px;
-        cursor: pointer;
+        margin-top: 40px; background: var(--red); border: none;
+        padding: 14px 40px; color: #fff; font-family: inherit;
+        font-size: 13px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 3px; cursor: pointer;
     }
     .crash-restart:hover { background: var(--red-bright); }
 
@@ -578,19 +337,17 @@
     <div class="user-block">
         <div class="avatar" id="avatarLetter">?</div>
         <div class="nick-wrap">
-            <span class="admin-tag" id="adminTag" style="display:none;">ADMIN</span>
+            <span class="admin-tag" id="adminTag" style="display:none;">TESTER</span>
             <span class="nick" id="nickDisplay">Гость</span>
         </div>
     </div>
     <div class="tabs">
         <button class="active" data-tab="main">Игра</button>
         <button data-tab="profile">Профиль</button>
+        <button data-tab="leaders">Лидеры</button>
         <button data-tab="settings">Настройки</button>
     </div>
-    <div class="balance-block">
-        Баланс
-        <b id="balanceTop">1000.00</b>
-    </div>
+    <div class="balance-block">Баланс <b id="balanceTop">1000.00</b></div>
 </div>
 
 <div class="screen active" id="screen-main">
@@ -623,9 +380,7 @@
                 <div class="wheel-pct" id="wheelPct">80.00%</div>
                 <div class="wheel-state safe" id="wheelState">Безопасно</div>
             </div>
-            <div class="arrow-rot" id="arrowRot">
-                <div class="arrow"></div>
-            </div>
+            <div class="arrow-rot" id="arrowRot"><div class="arrow"></div></div>
         </div>
 
         <div class="panel">
@@ -642,9 +397,7 @@
                     <div class="slider-knob" id="sliderKnob"></div>
                 </div>
             </div>
-
             <button class="upgrade" id="spinBtn">Апгрейд</button>
-
             <div class="mult-panel">
                 <button class="mult" onclick="applyMult(2)">x2</button>
                 <button class="mult" onclick="applyMult(4)">x4</button>
@@ -692,6 +445,17 @@
     </div>
 </div>
 
+<div class="screen" id="screen-leaders">
+    <div class="lb-wrap">
+        <div class="lb-header">
+            <div>#</div>
+            <div>Игрок</div>
+            <div>Баланс</div>
+        </div>
+        <div id="leaderboardList"></div>
+    </div>
+</div>
+
 <div class="screen" id="screen-settings">
     <div class="cards">
         <div class="card">
@@ -700,7 +464,7 @@
                 <label>Свой цвет</label>
                 <input type="color" id="customColor" value="#c23a2b" style="width:80px; height:40px; background:transparent; border:1px solid var(--line); cursor:pointer; padding:2px;">
             </div>
-            <div class="color-row" id="colorRow">
+            <div class="color-row">
                 <button class="color-dot" data-color="#c23a2b" style="background:#c23a2b"></button>
                 <button class="color-dot" data-color="#e54a35" style="background:#e54a35"></button>
                 <button class="color-dot" data-color="#c9942c" style="background:#c9942c"></button>
@@ -730,22 +494,19 @@
 
         <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
             <h3>★ ADMIN+ ПАНЕЛЬ ★</h3>
-
             <div class="toggle-row">
                 <span>Все апгрейды заходят</span>
                 <div class="toggle gold" id="alwaysWinToggle"></div>
             </div>
-
             <div class="toggle-row">
-                <span>Приз всегда выпадает (100% в приз)</span>
+                <span>Приз всегда выпадает</span>
                 <div class="toggle gold" id="alwaysPrizeToggle"></div>
             </div>
-
-            <div class="field" style="margin-top: 14px;">
+            <div class="field" style="margin-top:14px;">
                 <label>Изменить баланс</label>
                 <input type="text" id="adminBalanceInput" placeholder="1000" inputmode="decimal">
             </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="btn gold" onclick="adminSetBalance()">Установить</button>
                 <button class="btn gold" onclick="adminAddBalance(1000)">+1K</button>
                 <button class="btn gold" onclick="adminAddBalance(10000)">+10K</button>
@@ -755,9 +516,9 @@
         </div>
 
         <div class="card">
-            <h3 style="color: #b02222;">Опасная зона</h3>
-            <button class="btn danger" style="width: 100%;" onclick="askReset()">
-                Сбросить всё и начать с нуля
+            <h3 style="color:#b02222;">Сброс баланса</h3>
+            <button class="btn danger" style="width:100%;" onclick="askReset()">
+                Сбросить баланс до 1000
             </button>
         </div>
     </div>
@@ -767,10 +528,8 @@
     <div class="confirm-box">
         <div class="confirm-title">Уверен?</div>
         <div class="confirm-text">
-            Это действие сотрёт весь прогресс:<br>
-            баланс, ник, статус ADMIN, промокоды.<br>
-            Начнёшь заново с 1000.<br><br>
-            Отменить это нельзя.
+            Баланс сбросится до 1000.<br>
+            Ник, статус и промокоды сохранятся.
         </div>
         <div class="confirm-buttons">
             <button class="btn" onclick="cancelReset()">Отмена</button>
@@ -822,8 +581,7 @@ const Sound = (() => {
         gain.gain.setValueAtTime(0, c.currentTime + when);
         gain.gain.linearRampToValueAtTime(volume, c.currentTime + when + attack);
         gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + when + duration);
-        osc.connect(gain);
-        gain.connect(master);
+        osc.connect(gain); gain.connect(master);
         osc.start(c.currentTime + when);
         osc.stop(c.currentTime + when + duration + 0.05);
     }
@@ -831,11 +589,11 @@ const Sound = (() => {
     function softNoise(duration, volume = 0.08, cutoff = 800, when = 0) {
         if (!enabled) return;
         const c = getCtx();
-        const bufferSize = Math.floor(c.sampleRate * duration);
-        const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+        const bs = Math.floor(c.sampleRate * duration);
+        const buffer = c.createBuffer(1, bs, c.sampleRate);
         const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            const t = i / bufferSize;
+        for (let i = 0; i < bs; i++) {
+            const t = i / bs;
             data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3);
         }
         const src = c.createBufferSource();
@@ -844,14 +602,11 @@ const Sound = (() => {
         filt.type = 'lowpass';
         filt.frequency.setValueAtTime(cutoff, c.currentTime + when);
         filt.frequency.exponentialRampToValueAtTime(cutoff * 0.3, c.currentTime + when + duration);
-        filt.Q.value = 0.7;
         const gain = c.createGain();
         gain.gain.setValueAtTime(0, c.currentTime + when);
         gain.gain.linearRampToValueAtTime(volume, c.currentTime + when + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + when + duration);
-        src.connect(filt);
-        filt.connect(gain);
-        gain.connect(master);
+        src.connect(filt); filt.connect(gain); gain.connect(master);
         src.start(c.currentTime + when);
         src.stop(c.currentTime + when + duration + 0.05);
     }
@@ -871,8 +626,7 @@ const Sound = (() => {
         conv.buffer = buf;
         const convGain = c.createGain();
         convGain.gain.value = 0.4;
-        conv.connect(convGain);
-        convGain.connect(master);
+        conv.connect(convGain); convGain.connect(master);
         return conv;
     }
 
@@ -883,9 +637,7 @@ const Sound = (() => {
 
     return {
         setEnabled(v) { enabled = v; },
-        isEnabled() { return enabled; },
         resume() { getCtx(); },
-
         click() { tone(500, 0.06, 'sine', 0.04, 0, 0.005); },
         tick(intensity = 1) { tone(700 + Math.random() * 200, 0.04, 'sine', 0.025 * intensity, 0, 0.005); },
 
@@ -894,146 +646,77 @@ const Sound = (() => {
             const c = getCtx();
             const verb = getReverb();
             const sweep = c.createOscillator();
-            const sweepGain = c.createGain();
+            const sg = c.createGain();
             sweep.type = 'sine';
             sweep.frequency.setValueAtTime(300, c.currentTime);
             sweep.frequency.exponentialRampToValueAtTime(1200, c.currentTime + 0.35);
-            sweepGain.gain.setValueAtTime(0, c.currentTime);
-            sweepGain.gain.linearRampToValueAtTime(0.05, c.currentTime + 0.05);
-            sweepGain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.4);
-            sweep.connect(sweepGain);
-            sweepGain.connect(master);
-            if (verb) {
-                const e = c.createGain();
-                e.gain.value = 0.3;
-                sweepGain.connect(e);
-                e.connect(verb);
-            }
-            sweep.start(c.currentTime);
-            sweep.stop(c.currentTime + 0.45);
+            sg.gain.setValueAtTime(0, c.currentTime);
+            sg.gain.linearRampToValueAtTime(0.05, c.currentTime + 0.05);
+            sg.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.4);
+            sweep.connect(sg); sg.connect(master);
+            if (verb) { const e = c.createGain(); e.gain.value = 0.3; sg.connect(e); e.connect(verb); }
+            sweep.start(c.currentTime); sweep.stop(c.currentTime + 0.45);
 
-            const notes = [
-                { freq: 523.25, time: 0.00, vol: 0.10 },
-                { freq: 659.25, time: 0.08, vol: 0.10 },
-                { freq: 783.99, time: 0.16, vol: 0.10 },
-                { freq: 1046.50, time: 0.24, vol: 0.12 },
-                { freq: 1318.51, time: 0.32, vol: 0.11 },
-                { freq: 1567.98, time: 0.40, vol: 0.10 },
-            ];
-            notes.forEach(n => {
-                const osc1 = c.createOscillator();
-                const osc2 = c.createOscillator();
-                const gain = c.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.value = n.freq;
-                osc2.type = 'sine';
-                osc2.frequency.value = n.freq * 2;
-                const g2 = c.createGain();
-                g2.gain.value = 0.25;
-                gain.gain.setValueAtTime(0, c.currentTime + n.time);
-                gain.gain.linearRampToValueAtTime(n.vol, c.currentTime + n.time + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + n.time + 1.2);
-                osc1.connect(gain);
-                osc2.connect(g2);
-                g2.connect(gain);
-                gain.connect(master);
-                if (verb) {
-                    const e = c.createGain();
-                    e.gain.value = 0.35;
-                    gain.connect(e);
-                    e.connect(verb);
-                }
-                osc1.start(c.currentTime + n.time);
-                osc1.stop(c.currentTime + n.time + 1.3);
-                osc2.start(c.currentTime + n.time);
-                osc2.stop(c.currentTime + n.time + 1.3);
+            [[523.25,0.00,0.10],[659.25,0.08,0.10],[783.99,0.16,0.10],
+             [1046.50,0.24,0.12],[1318.51,0.32,0.11],[1567.98,0.40,0.10]].forEach(([f,t,v]) => {
+                const o1 = c.createOscillator();
+                const o2 = c.createOscillator();
+                const g = c.createGain();
+                o1.type = 'sine'; o1.frequency.value = f;
+                o2.type = 'sine'; o2.frequency.value = f * 2;
+                const g2 = c.createGain(); g2.gain.value = 0.25;
+                g.gain.setValueAtTime(0, c.currentTime + t);
+                g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t + 1.2);
+                o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+                if (verb) { const e = c.createGain(); e.gain.value = 0.35; g.connect(e); e.connect(verb); }
+                o1.start(c.currentTime + t); o1.stop(c.currentTime + t + 1.3);
+                o2.start(c.currentTime + t); o2.stop(c.currentTime + t + 1.3);
             });
 
-            const coins = [
-                { freq: 2093, time: 0.65, vol: 0.06 },
-                { freq: 2637, time: 0.72, vol: 0.05 },
-                { freq: 3136, time: 0.79, vol: 0.05 },
-                { freq: 2093, time: 0.90, vol: 0.04 },
-                { freq: 2637, time: 0.97, vol: 0.04 },
-            ];
-            coins.forEach(n => {
-                const osc = c.createOscillator();
-                const gain = c.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = n.freq;
-                gain.gain.setValueAtTime(0, c.currentTime + n.time);
-                gain.gain.linearRampToValueAtTime(n.vol, c.currentTime + n.time + 0.005);
-                gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + n.time + 0.6);
-                osc.connect(gain);
-                gain.connect(master);
-                if (verb) {
-                    const e = c.createGain();
-                    e.gain.value = 0.3;
-                    gain.connect(e);
-                    e.connect(verb);
-                }
-                osc.start(c.currentTime + n.time);
-                osc.stop(c.currentTime + n.time + 0.7);
+            [[2093,0.65,0.06],[2637,0.72,0.05],[3136,0.79,0.05],
+             [2093,0.90,0.04],[2637,0.97,0.04]].forEach(([f,t,v]) => {
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.type = 'sine'; o.frequency.value = f;
+                g.gain.setValueAtTime(0, c.currentTime + t);
+                g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.005);
+                g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t + 0.6);
+                o.connect(g); g.connect(master);
+                if (verb) { const e = c.createGain(); e.gain.value = 0.3; g.connect(e); e.connect(verb); }
+                o.start(c.currentTime + t); o.stop(c.currentTime + t + 0.7);
             });
 
-            const finalChord = [
-                { freq: 261.63, time: 1.05, vol: 0.08 },
-                { freq: 523.25, time: 1.05, vol: 0.07 },
-                { freq: 659.25, time: 1.05, vol: 0.07 },
-                { freq: 783.99, time: 1.05, vol: 0.07 },
-                { freq: 1046.50, time: 1.05, vol: 0.09 },
-            ];
-            finalChord.forEach(n => {
-                const osc = c.createOscillator();
-                const gain = c.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = n.freq;
-                gain.gain.setValueAtTime(0, c.currentTime + n.time);
-                gain.gain.linearRampToValueAtTime(n.vol, c.currentTime + n.time + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + n.time + 2.5);
-                osc.connect(gain);
-                gain.connect(master);
-                if (verb) {
-                    const e = c.createGain();
-                    e.gain.value = 0.5;
-                    gain.connect(e);
-                    e.connect(verb);
-                }
-                osc.start(c.currentTime + n.time);
-                osc.stop(c.currentTime + n.time + 2.6);
+            [[261.63,1.05,0.08],[523.25,1.05,0.07],[659.25,1.05,0.07],
+             [783.99,1.05,0.07],[1046.50,1.05,0.09]].forEach(([f,t,v]) => {
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.type = 'sine'; o.frequency.value = f;
+                g.gain.setValueAtTime(0, c.currentTime + t);
+                g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t + 2.5);
+                o.connect(g); g.connect(master);
+                if (verb) { const e = c.createGain(); e.gain.value = 0.5; g.connect(e); e.connect(verb); }
+                o.start(c.currentTime + t); o.stop(c.currentTime + t + 2.6);
             });
         },
 
         prize() {
             if (!enabled) return;
+            Sound.win();
             const c = getCtx();
             const verb = getReverb();
-            Sound.win();
-            const extra = [
-                { freq: 1760, time: 1.20, vol: 0.06 },
-                { freq: 2093, time: 1.28, vol: 0.06 },
-                { freq: 2637, time: 1.36, vol: 0.07 },
-                { freq: 3136, time: 1.44, vol: 0.07 },
-                { freq: 3520, time: 1.52, vol: 0.06 },
-            ];
-            extra.forEach(n => {
-                const osc = c.createOscillator();
-                const gain = c.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = n.freq;
-                gain.gain.setValueAtTime(0, c.currentTime + n.time);
-                gain.gain.linearRampToValueAtTime(n.vol, c.currentTime + n.time + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + n.time + 1.0);
-                osc.connect(gain);
-                gain.connect(master);
-                if (verb) {
-                    const e = c.createGain();
-                    e.gain.value = 0.5;
-                    gain.connect(e);
-                    e.connect(verb);
-                }
-                osc.start(c.currentTime + n.time);
-                osc.stop(c.currentTime + n.time + 1.1);
+            [[1760,1.20,0.06],[2093,1.28,0.06],[2637,1.36,0.07],
+             [3136,1.44,0.07],[3520,1.52,0.06]].forEach(([f,t,v]) => {
+                const o = c.createOscillator();
+                const g = c.createGain();
+                o.type = 'sine'; o.frequency.value = f;
+                g.gain.setValueAtTime(0, c.currentTime + t);
+                g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t + 1.0);
+                o.connect(g); g.connect(master);
+                if (verb) { const e = c.createGain(); e.gain.value = 0.5; g.connect(e); e.connect(verb); }
+                o.start(c.currentTime + t); o.stop(c.currentTime + t + 1.1);
             });
         },
 
@@ -1042,33 +725,29 @@ const Sound = (() => {
             tone(165, 0.5, 'sine', 0.05, 0.15, 0.02);
             tone(110, 0.7, 'sine', 0.04, 0.35, 0.02);
         },
-
         cashback() {
             tone(1400, 0.4, 'sine', 0.06, 0, 0.01);
             tone(1800, 0.4, 'sine', 0.05, 0.08, 0.01);
             tone(2200, 0.6, 'sine', 0.04, 0.16, 0.01);
         },
-
         crash() {
             softNoise(1.2, 0.15, 400, 0);
             tone(60, 1.8, 'sine', 0.12, 0, 0.05);
             tone(40, 2.2, 'sine', 0.1, 0.15, 0.05);
         },
-
         startSpinTicks(durationMs) {
             if (!enabled) return;
             let stopped = false;
-            const startTime = performance.now();
-            const tickFn = () => {
+            const start = performance.now();
+            const fn = () => {
                 if (stopped) return;
-                const elapsed = performance.now() - startTime;
-                if (elapsed > durationMs) return;
-                const progress = elapsed / durationMs;
-                const delay = 60 + Math.pow(progress, 2.5) * 350;
-                Sound.tick(0.4 + progress * 0.4);
-                setTimeout(tickFn, delay);
+                const el = performance.now() - start;
+                if (el > durationMs) return;
+                const p = el / durationMs;
+                Sound.tick(0.4 + p * 0.4);
+                setTimeout(fn, 60 + Math.pow(p, 2.5) * 350);
             };
-            setTimeout(tickFn, 50);
+            setTimeout(fn, 50);
             return () => { stopped = true; };
         },
     };
@@ -1080,23 +759,24 @@ const Sound = (() => {
 const PROMOS = {
     'TEST-5106': {
         balance: 10000,
-        admin: true,
-        msg: 'Активировано. +10000, статус ADMIN',
+        tester: true,
+        msg: 'Активировано. +10000, статус TESTER',
+        msgType: 'tester',
     },
     'Pupsik_2288': {
         balance: 0,
         adminPlus: true,
-        msg: '★ ADMIN+ активирован! Возможности: 100% выигрыш, изменение баланса, вечный приз.',
+        msg: '★ ADMIN+ активирован',
         msgType: 'gold',
     },
     'oleza67': {
         balance: 5000,
-        msg: 'Активировано. +5000 к балансу',
+        msg: 'Активировано. +5000',
     },
 };
 
 // ============================================================
-// ИГРА
+// СОСТОЯНИЕ
 // ============================================================
 let bet = 100;
 let win = 125;
@@ -1104,10 +784,10 @@ let spinning = false;
 let rotation = 0;
 let prizeSectorVisible = false;
 
-const state = {
+const DEFAULT_STATE = {
     balance: 1000,
     nickname: '',
-    isAdmin: false,
+    isTester: false,
     isAdminPlus: false,
     usedPromos: [],
     arrowColor: '#c23a2b',
@@ -1118,18 +798,51 @@ const state = {
     alwaysPrize: false,
 };
 
-const LS_KEY = 'roulette_state_v9';
+const state = { ...DEFAULT_STATE };
+const LS_KEY = 'roulette_state_v1';
 
 function save() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
-}
-function load() {
     try {
-        const raw = localStorage.getItem(LS_KEY);
-        if (raw) Object.assign(state, JSON.parse(raw));
+        const toSave = {
+            balance: state.balance,
+            nickname: state.nickname,
+            isTester: state.isTester,
+            isAdminPlus: state.isAdminPlus,
+            usedPromos: state.usedPromos,
+            arrowColor: state.arrowColor,
+            fastSpin: state.fastSpin,
+            soundOn: state.soundOn,
+            pending: state.pending,
+            alwaysWin: state.alwaysWin,
+            alwaysPrize: state.alwaysPrize,
+        };
+        localStorage.setItem(LS_KEY, JSON.stringify(toSave));
     } catch(e) {}
 }
 
+function load() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        // Загружаем только известные поля, по одному
+        if (typeof parsed.balance === 'number') state.balance = parsed.balance;
+        if (typeof parsed.nickname === 'string') state.nickname = parsed.nickname;
+        if (typeof parsed.isTester === 'boolean') state.isTester = parsed.isTester;
+        if (typeof parsed.isAdminPlus === 'boolean') state.isAdminPlus = parsed.isAdminPlus;
+        if (Array.isArray(parsed.usedPromos)) state.usedPromos = parsed.usedPromos;
+        if (typeof parsed.arrowColor === 'string') state.arrowColor = parsed.arrowColor;
+        if (typeof parsed.fastSpin === 'boolean') state.fastSpin = parsed.fastSpin;
+        if (typeof parsed.soundOn === 'boolean') state.soundOn = parsed.soundOn;
+        if (parsed.pending) state.pending = parsed.pending;
+        if (typeof parsed.alwaysWin === 'boolean') state.alwaysWin = parsed.alwaysWin;
+        if (typeof parsed.alwaysPrize === 'boolean') state.alwaysPrize = parsed.alwaysPrize;
+    } catch(e) {}
+}
+
+// ============================================================
+// UI
+// ============================================================
 function update() {
     if (spinning || state.pending) {
         $('balanceTop').textContent = '—';
@@ -1145,22 +858,26 @@ function update() {
 
     const tag = $('adminTag');
     const av = $('avatarLetter');
+    av.classList.remove('tester', 'admin-plus');
+    tag.classList.remove('tester', 'admin-plus');
+
     if (state.isAdminPlus) {
         tag.style.display = 'inline-block';
         tag.textContent = 'ADMIN+';
-        tag.className = 'admin-tag admin-plus';
+        tag.classList.add('admin-plus');
         av.classList.add('admin-plus');
-    } else if (state.isAdmin) {
+    } else if (state.isTester) {
         tag.style.display = 'inline-block';
-        tag.textContent = 'ADMIN';
-        tag.className = 'admin-tag';
-        av.classList.remove('admin-plus');
+        tag.textContent = 'TESTER';
+        tag.classList.add('tester');
+        av.classList.add('tester');
     } else {
         tag.style.display = 'none';
-        av.classList.remove('admin-plus');
     }
 
     $('adminPlusPanel').style.display = state.isAdminPlus ? 'block' : 'none';
+    $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
+    $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
 
     updateWheel();
     updateStats();
@@ -1232,15 +949,12 @@ function updateWheel() {
     }
 
     $('wheelPct').textContent = chance.toFixed(2) + '%';
-
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
 
     if (prizeSectorVisible) {
         const prizeHalfDeg = (2 * half) * 0.10 / 2;
-        const prizeStart = 180 - prizeHalfDeg;
-        const prizeEnd = 180 + prizeHalfDeg;
-        $('prizeArc').setAttribute('d', arcPath(prizeStart, prizeEnd));
+        $('prizeArc').setAttribute('d', arcPath(180 - prizeHalfDeg, 180 + prizeHalfDeg));
         $('prizeArc').style.display = '';
     } else {
         $('prizeArc').style.display = 'none';
@@ -1258,15 +972,13 @@ function updateWheel() {
 }
 
 function applyMult(m) {
-    Sound.resume();
-    Sound.click();
+    Sound.resume(); Sound.click();
     win = bet * m;
     if ((bet / win) * 100 > 80) win = bet * (100 / 80);
     update();
 }
 function applyPercent(p) {
-    Sound.resume();
-    Sound.click();
+    Sound.resume(); Sound.click();
     win = bet * (100 / p);
     update();
 }
@@ -1299,9 +1011,7 @@ function spin() {
         isWin = Math.random() * 100 < chance;
     }
 
-    // Приз: сектор появляется с шансом 5%, попадание в него с шансом 10%
     let prizeActive = false;
-
     if (isWin) {
         if (state.isAdminPlus && state.alwaysPrize) {
             prizeSectorVisible = true;
@@ -1309,7 +1019,6 @@ function spin() {
         } else {
             const sectorAppears = Math.random() < 0.05;
             prizeSectorVisible = sectorAppears;
-
             if (sectorAppears) {
                 prizeActive = Math.random() < 0.10;
             }
@@ -1364,10 +1073,9 @@ function spin() {
     rotation += turns * 360 + delta;
 
     state.pending = {
-        bet: bet, win: win, chance: chance,
-        isWin: isWin, payout: payout, isPrize: prizeActive,
+        bet, win, chance, isWin, payout, isPrize: prizeActive,
         prizeVisible: prizeSectorVisible,
-        rotation: rotation, timestamp: Date.now(),
+        rotation, timestamp: Date.now(),
     };
     save();
 
@@ -1377,7 +1085,6 @@ function spin() {
     $('spinBtn').disabled = true;
     $('statResult').textContent = '';
     $('statResult').className = 'result';
-
     $('arrowRot').style.transform = `rotate(${rotation}deg)`;
 
     const duration = state.fastSpin ? 3000 : 6000;
@@ -1386,7 +1093,6 @@ function spin() {
     setTimeout(() => {
         spinning = false;
         $('spinBtn').disabled = false;
-
         state.pending = null;
         save();
 
@@ -1421,11 +1127,9 @@ function triggerCashback(b) {
     else if (roll < 70) pct = 5;
     else if (roll < 71) pct = 15;
     if (pct === 0) return;
-
     const amount = b * (pct / 100);
     state.balance += amount;
-    save();
-    update();
+    save(); update();
     showResult('Кэшбек +' + amount.toFixed(2), 'win');
     Sound.cashback();
 }
@@ -1439,19 +1143,12 @@ function triggerCrash(b) {
 
 function restartAfterCrash() {
     state.balance = 1000;
-    state.nickname = '';
-    state.isAdmin = false;
-    state.isAdminPlus = false;
-    state.usedPromos = [];
     state.pending = null;
-    state.alwaysWin = false;
-    state.alwaysPrize = false;
     bet = 100;
     win = 125;
     prizeSectorVisible = false;
     save();
     $('crashOverlay').classList.remove('active');
-    $('nickInput').value = '';
     update();
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1490,40 +1187,28 @@ slider.addEventListener('pointerup', e => {
 });
 
 // ============================================================
-// ПОЛЕ ВВОДА ВЫИГРЫША
+// ПОЛЕ ВЫИГРЫША
 // ============================================================
 $('winInputField').addEventListener('input', e => {
     let v = e.target.value.replace(/[^\d.]/g, '');
     const parts = v.split('.');
     if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
     e.target.value = v;
-
     const num = parseFloat(v);
     if (isNaN(num) || num <= 0) return;
     if (num <= bet) return;
-
     const chance = (bet / num) * 100;
-    if (chance > 80) {
-        win = bet * (100 / 80);
-    } else {
-        win = num;
-    }
+    win = chance > 80 ? bet * (100 / 80) : num;
     updateStats();
     updateWheel();
 });
-
 $('winInputField').addEventListener('blur', () => {
     const num = parseFloat($('winInputField').value);
-    if (isNaN(num) || num <= bet) {
-        win = bet * 1.25;
-    } else if ((bet / num) * 100 > 80) {
-        win = bet * (100 / 80);
-    } else {
-        win = num;
-    }
+    if (isNaN(num) || num <= bet) win = bet * 1.25;
+    else if ((bet / num) * 100 > 80) win = bet * (100 / 80);
+    else win = num;
     update();
 });
-
 $('winInputField').addEventListener('keydown', e => {
     if (e.key === 'Enter') e.target.blur();
 });
@@ -1533,14 +1218,67 @@ $('winInputField').addEventListener('keydown', e => {
 // ============================================================
 document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
-        Sound.resume();
-        Sound.click();
+        Sound.resume(); Sound.click();
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         btn.classList.add('active');
         $('screen-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'leaders') renderLeaderboard();
     });
 });
+
+// ============================================================
+// ЛИДЕРБОРД
+// ============================================================
+function renderLeaderboard() {
+    const list = $('leaderboardList');
+    let players = [];
+    try {
+        const raw = localStorage.getItem('roulette_leaderboard');
+        if (raw) players = JSON.parse(raw);
+    } catch(e) {}
+    if (!Array.isArray(players)) players = [];
+
+    // Обновляем запись текущего игрока
+    const myName = state.nickname || 'Гость';
+    const existingIdx = players.findIndex(p => p.name === myName);
+    const me = { name: myName, balance: state.balance, isTester: state.isTester, isAdminPlus: state.isAdminPlus };
+    if (existingIdx >= 0) players[existingIdx] = me;
+    else players.push(me);
+
+    try { localStorage.setItem('roulette_leaderboard', JSON.stringify(players)); } catch(e) {}
+
+    // Сортируем по балансу
+    players.sort((a, b) => b.balance - a.balance);
+
+    if (players.length === 0) {
+        list.innerHTML = '<div class="lb-empty">Пока пусто</div>';
+        return;
+    }
+
+    list.innerHTML = '';
+    players.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'lb-row' + (p.name === myName ? ' me' : '');
+        const rank = i + 1;
+        const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
+        let badge = '';
+        if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN+</span>';
+        else if (p.isTester) badge = '<span class="admin-tag tester">TESTER</span>';
+        row.innerHTML = `
+            <div class="lb-rank ${rankClass}">#${rank}</div>
+            <div class="lb-name">${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
+            <div class="lb-balance">${p.balance.toFixed(2)}</div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+}
 
 // ============================================================
 // ПРОФИЛЬ
@@ -1549,8 +1287,7 @@ function saveNick() {
     const v = $('nickInput').value.trim();
     if (v.length < 1) return alert('Введи ник');
     state.nickname = v;
-    save();
-    update();
+    save(); update();
     alert('Ник сохранён: ' + v);
 }
 
@@ -1569,7 +1306,6 @@ function applyPromo() {
     }
 
     const promo = PROMOS[code];
-
     if (!promo) {
         msg.textContent = 'Неверный промокод';
         msg.className = 'promo-msg err';
@@ -1584,22 +1320,18 @@ function applyPromo() {
     }
 
     if (promo.balance) state.balance += promo.balance;
-    if (promo.admin) state.isAdmin = true;
+    if (promo.tester) state.isTester = true;
     if (promo.adminPlus) state.isAdminPlus = true;
     if (once) state.usedPromos.push(code);
 
-    save();
-    update();
+    save(); update();
 
     msg.textContent = promo.msg || 'Активировано';
     msg.className = 'promo-msg ' + (promo.msgType || 'ok');
     $('promoInput').value = '';
 
-    if (promo.adminPlus) {
-        Sound.prize();
-    } else {
-        Sound.win();
-    }
+    if (promo.adminPlus || promo.tester) Sound.prize();
+    else Sound.win();
 }
 
 // ============================================================
@@ -1608,13 +1340,9 @@ function applyPromo() {
 function adminSetBalance() {
     if (!state.isAdminPlus) return;
     const v = parseFloat($('adminBalanceInput').value);
-    if (isNaN(v) || v < 0) {
-        alert('Введи корректное число');
-        return;
-    }
+    if (isNaN(v) || v < 0) { alert('Введи корректное число'); return; }
     state.balance = v;
-    save();
-    update();
+    save(); update();
     $('adminBalanceInput').value = '';
     Sound.cashback();
 }
@@ -1622,8 +1350,7 @@ function adminSetBalance() {
 function adminAddBalance(amount) {
     if (!state.isAdminPlus) return;
     state.balance += amount;
-    save();
-    update();
+    save(); update();
     Sound.cashback();
 }
 
@@ -1651,8 +1378,7 @@ $('fastToggle').addEventListener('click', () => {
     $('arrowRot').style.transition = state.fastSpin
         ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
         : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
-    Sound.resume();
-    Sound.click();
+    Sound.resume(); Sound.click();
     save();
 });
 
@@ -1668,69 +1394,35 @@ $('alwaysWinToggle').addEventListener('click', () => {
     if (!state.isAdminPlus) return;
     state.alwaysWin = !state.alwaysWin;
     $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
-    save();
-    Sound.cashback();
+    save(); Sound.cashback();
 });
 
 $('alwaysPrizeToggle').addEventListener('click', () => {
     if (!state.isAdminPlus) return;
     state.alwaysPrize = !state.alwaysPrize;
     $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
-    save();
-    Sound.cashback();
+    save(); Sound.cashback();
 });
 
 // ============================================================
-// СБРОС ВСЕГО
+// СБРОС БАЛАНСА (не трогает ник/статус/промокоды)
 // ============================================================
 function askReset() {
-    Sound.resume();
-    Sound.click();
+    Sound.resume(); Sound.click();
     $('confirmOverlay').classList.add('active');
 }
-
 function cancelReset() {
     $('confirmOverlay').classList.remove('active');
     Sound.click();
 }
-
 function doReset() {
     state.balance = 1000;
-    state.nickname = '';
-    state.isAdmin = false;
-    state.isAdminPlus = false;
-    state.usedPromos = [];
-    state.arrowColor = '#c23a2b';
-    state.fastSpin = false;
-    state.soundOn = true;
     state.pending = null;
-    state.alwaysWin = false;
-    state.alwaysPrize = false;
     bet = 100;
     win = 125;
     prizeSectorVisible = false;
     save();
-
     $('confirmOverlay').classList.remove('active');
-
-    document.documentElement.style.setProperty('--arrow', '#c23a2b');
-    $('customColor').value = '#c23a2b';
-    document.querySelectorAll('.color-dot').forEach(d => {
-        d.classList.toggle('active', d.dataset.color === '#c23a2b');
-    });
-    $('fastToggle').classList.remove('on');
-    $('soundToggle').classList.add('on');
-    Sound.setEnabled(true);
-    $('nickInput').value = '';
-    $('alwaysWinToggle').classList.remove('on');
-    $('alwaysPrizeToggle').classList.remove('on');
-    $('arrowRot').style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
-
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.querySelector('[data-tab="main"]').classList.add('active');
-    $('screen-main').classList.add('active');
-
     update();
 }
 
@@ -1773,11 +1465,8 @@ if (state.pending) {
 
     setTimeout(() => {
         if (p.isWin) {
-            if (p.isPrize) {
-                showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
-            } else {
-                showResult('+' + p.payout.toFixed(2), 'win');
-            }
+            if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
+            else showResult('+' + p.payout.toFixed(2), 'win');
         } else {
             showResult('-' + p.bet.toFixed(2), 'lose');
         }
