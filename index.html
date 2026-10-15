@@ -4,6 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LuckyGrade</title>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkFgX0Q2SiPCoik633Jhfbx3m-ujW9Pzc",
+    authDomain: "luckygrade-86400.firebaseapp.com",
+    databaseURL: "https://luckygrade-86400-default-rtdb.firebaseio.com",
+    projectId: "luckygrade-86400",
+    storageBucket: "luckygrade-86400.firebasestorage.app",
+    messagingSenderId: "811806853259",
+    appId: "1:811806853259:web:f7c96e1680d72dee0f6c8e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window.FB = { db, ref, set, get, onValue };
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
+
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -328,6 +349,7 @@
         .stats { grid-template-columns: 1fr 1fr; gap: 4px; height: auto; }
         .stats .result { grid-column: 1 / -1; text-align: left; }
         .crash-text { font-size: 56px; }
+        .lb-header, .lb-row { grid-template-columns: 50px 1fr 120px; font-size: 12px; }
     }
 </style>
 </head>
@@ -787,6 +809,7 @@ let prizeSectorVisible = false;
 const DEFAULT_STATE = {
     balance: 1000,
     nickname: '',
+    playerId: '',
     isTester: false,
     isAdminPlus: false,
     usedPromos: [],
@@ -799,13 +822,14 @@ const DEFAULT_STATE = {
 };
 
 const state = { ...DEFAULT_STATE };
-const LS_KEY = 'roulette_state_v1';
+const LS_KEY = 'roulette_state_v2';
 
 function save() {
     try {
         const toSave = {
             balance: state.balance,
             nickname: state.nickname,
+            playerId: state.playerId,
             isTester: state.isTester,
             isAdminPlus: state.isAdminPlus,
             usedPromos: state.usedPromos,
@@ -825,9 +849,9 @@ function load() {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
-        // Загружаем только известные поля, по одному
         if (typeof parsed.balance === 'number') state.balance = parsed.balance;
         if (typeof parsed.nickname === 'string') state.nickname = parsed.nickname;
+        if (typeof parsed.playerId === 'string') state.playerId = parsed.playerId;
         if (typeof parsed.isTester === 'boolean') state.isTester = parsed.isTester;
         if (typeof parsed.isAdminPlus === 'boolean') state.isAdminPlus = parsed.isAdminPlus;
         if (Array.isArray(parsed.usedPromos)) state.usedPromos = parsed.usedPromos;
@@ -838,6 +862,96 @@ function load() {
         if (typeof parsed.alwaysWin === 'boolean') state.alwaysWin = parsed.alwaysWin;
         if (typeof parsed.alwaysPrize === 'boolean') state.alwaysPrize = parsed.alwaysPrize;
     } catch(e) {}
+}
+
+function getOrCreatePlayerId() {
+    if (!state.playerId) {
+        state.playerId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+        save();
+    }
+    return state.playerId;
+}
+
+// ============================================================
+// FIREBASE LIDERBOARD
+// ============================================================
+let fbUnsubscribe = null;
+
+function pushMyBalanceToFirebase() {
+    if (!window.FB) return;
+    try {
+        const myId = getOrCreatePlayerId();
+        const myRef = window.FB.ref(window.FB.db, 'leaderboard/' + myId);
+        window.FB.set(myRef, {
+            name: state.nickname || 'Гость',
+            balance: state.balance,
+            isTester: state.isTester,
+            isAdminPlus: state.isAdminPlus,
+            updatedAt: Date.now(),
+        });
+    } catch(e) { console.warn('Firebase push failed', e); }
+}
+
+function renderLeaderboard() {
+    const list = $('leaderboardList');
+    list.innerHTML = '<div class="lb-empty">Загрузка...</div>';
+
+    const tryRender = () => {
+        if (!window.FB) {
+            list.innerHTML = '<div class="lb-empty">Firebase не загружен. Обновите страницу.</div>';
+            return;
+        }
+
+        pushMyBalanceToFirebase();
+
+        const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
+        // Отписываемся от прошлого слушателя, если был
+        if (fbUnsubscribe) { try { fbUnsubscribe(); } catch(e){} fbUnsubscribe = null; }
+        fbUnsubscribe = window.FB.onValue(lbRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const myId = state.playerId;
+            const players = Object.entries(data).map(([id, p]) => ({
+                id,
+                name: p.name || 'Гость',
+                balance: Number(p.balance) || 0,
+                isTester: !!p.isTester,
+                isAdminPlus: !!p.isAdminPlus,
+            }));
+
+            players.sort((a, b) => b.balance - a.balance);
+
+            if (players.length === 0) {
+                list.innerHTML = '<div class="lb-empty">Пока пусто</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            players.forEach((p, i) => {
+                const row = document.createElement('div');
+                row.className = 'lb-row' + (p.id === myId ? ' me' : '');
+                const rank = i + 1;
+                const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
+                let badge = '';
+                if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN+</span>';
+                else if (p.isTester) badge = '<span class="admin-tag tester">TESTER</span>';
+                row.innerHTML = `
+                    <div class="lb-rank ${rankClass}">#${rank}</div>
+                    <div class="lb-name">${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
+                    <div class="lb-balance">${p.balance.toFixed(2)}</div>
+                `;
+                list.appendChild(row);
+            });
+        });
+    };
+
+    if (window.FB) tryRender();
+    else window.addEventListener('fb-ready', tryRender, { once: true });
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
 }
 
 // ============================================================
@@ -1112,6 +1226,7 @@ function spin() {
 
         prizeSectorVisible = false;
         update();
+        pushMyBalanceToFirebase();
 
         if (state.balance < 1) {
             if (state.balance < 0) { state.balance = 0; save(); update(); }
@@ -1150,6 +1265,7 @@ function restartAfterCrash() {
     save();
     $('crashOverlay').classList.remove('active');
     update();
+    pushMyBalanceToFirebase();
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelector('[data-tab="main"]').classList.add('active');
@@ -1228,59 +1344,6 @@ document.querySelectorAll('.tabs button').forEach(btn => {
 });
 
 // ============================================================
-// ЛИДЕРБОРД
-// ============================================================
-function renderLeaderboard() {
-    const list = $('leaderboardList');
-    let players = [];
-    try {
-        const raw = localStorage.getItem('roulette_leaderboard');
-        if (raw) players = JSON.parse(raw);
-    } catch(e) {}
-    if (!Array.isArray(players)) players = [];
-
-    // Обновляем запись текущего игрока
-    const myName = state.nickname || 'Гость';
-    const existingIdx = players.findIndex(p => p.name === myName);
-    const me = { name: myName, balance: state.balance, isTester: state.isTester, isAdminPlus: state.isAdminPlus };
-    if (existingIdx >= 0) players[existingIdx] = me;
-    else players.push(me);
-
-    try { localStorage.setItem('roulette_leaderboard', JSON.stringify(players)); } catch(e) {}
-
-    // Сортируем по балансу
-    players.sort((a, b) => b.balance - a.balance);
-
-    if (players.length === 0) {
-        list.innerHTML = '<div class="lb-empty">Пока пусто</div>';
-        return;
-    }
-
-    list.innerHTML = '';
-    players.forEach((p, i) => {
-        const row = document.createElement('div');
-        row.className = 'lb-row' + (p.name === myName ? ' me' : '');
-        const rank = i + 1;
-        const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
-        let badge = '';
-        if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN+</span>';
-        else if (p.isTester) badge = '<span class="admin-tag tester">TESTER</span>';
-        row.innerHTML = `
-            <div class="lb-rank ${rankClass}">#${rank}</div>
-            <div class="lb-name">${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
-            <div class="lb-balance">${p.balance.toFixed(2)}</div>
-        `;
-        list.appendChild(row);
-    });
-}
-
-function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    })[c]);
-}
-
-// ============================================================
 // ПРОФИЛЬ
 // ============================================================
 function saveNick() {
@@ -1288,6 +1351,7 @@ function saveNick() {
     if (v.length < 1) return alert('Введи ник');
     state.nickname = v;
     save(); update();
+    pushMyBalanceToFirebase();
     alert('Ник сохранён: ' + v);
 }
 
@@ -1325,6 +1389,7 @@ function applyPromo() {
     if (once) state.usedPromos.push(code);
 
     save(); update();
+    pushMyBalanceToFirebase();
 
     msg.textContent = promo.msg || 'Активировано';
     msg.className = 'promo-msg ' + (promo.msgType || 'ok');
@@ -1343,6 +1408,7 @@ function adminSetBalance() {
     if (isNaN(v) || v < 0) { alert('Введи корректное число'); return; }
     state.balance = v;
     save(); update();
+    pushMyBalanceToFirebase();
     $('adminBalanceInput').value = '';
     Sound.cashback();
 }
@@ -1351,6 +1417,7 @@ function adminAddBalance(amount) {
     if (!state.isAdminPlus) return;
     state.balance += amount;
     save(); update();
+    pushMyBalanceToFirebase();
     Sound.cashback();
 }
 
@@ -1405,7 +1472,7 @@ $('alwaysPrizeToggle').addEventListener('click', () => {
 });
 
 // ============================================================
-// СБРОС БАЛАНСА (не трогает ник/статус/промокоды)
+// СБРОС БАЛАНСА
 // ============================================================
 function askReset() {
     Sound.resume(); Sound.click();
@@ -1424,6 +1491,7 @@ function doReset() {
     save();
     $('confirmOverlay').classList.remove('active');
     update();
+    pushMyBalanceToFirebase();
 }
 
 // ============================================================
