@@ -261,6 +261,8 @@
     }
     .toggle.on { background: #2a1a15; border-color: var(--red); }
     .toggle.on::after { transform: translateX(18px); background: var(--red); }
+    .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
+    .toggle.on.gold::after { background: var(--gold); }
     .lb-wrap { max-width: 720px; margin: 0 auto; width: 100%; }
     .lb-header {
         display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
@@ -624,8 +626,26 @@
 
         <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
             <h3>★ ADMIN ПАНЕЛЬ ★</h3>
+
+            <div class="toggle-row">
+                <span>Вечный заход</span>
+                <div class="toggle gold" id="alwaysWinToggle"></div>
+            </div>
+            <div class="toggle-row">
+                <span>Вечный приз</span>
+                <div class="toggle gold" id="alwaysPrizeToggle"></div>
+            </div>
+            <div class="toggle-row">
+                <span>Вечный кэшбек</span>
+                <div class="toggle gold" id="alwaysCashbackToggle"></div>
+            </div>
+            <div class="toggle-row">
+                <span>Невидимка (не в лидерборде)</span>
+                <div class="toggle gold" id="invisibleToggle"></div>
+            </div>
+
             <div class="field" style="margin-top:12px;">
-                <label>Изменить баланс</label>
+                <label>Изменить свой баланс</label>
                 <input type="text" id="adminBalanceInput" placeholder="1000" inputmode="decimal">
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -635,8 +655,26 @@
                 <button class="btn gold" onclick="adminAddBalance(100000)">+100K</button>
                 <button class="btn gold" onclick="adminAddBalance(1000000)">+1M</button>
             </div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
-                <button class="btn danger" style="flex:1;" onclick="adminFullWipe()">🔄 ПОЛНЫЙ СБРОС ВСЕХ</button>
+
+            <div style="border-top:1px solid var(--line); margin-top:16px; padding-top:14px;">
+                <h3 style="color:#e5a020;">УПРАВЛЕНИЕ ИГРОКОМ ПО ID</h3>
+                <div class="field">
+                    <label>Player ID</label>
+                    <input type="text" id="adminTargetId" placeholder="p_...">
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="btn gold" onclick="adminTargetReset()">Сброс до 1000</button>
+                    <button class="btn danger" onclick="adminTargetZero()">Обнулить</button>
+                    <button class="btn gold" onclick="adminTargetGrantTester()">Выдать TESTER</button>
+                    <button class="btn danger" onclick="adminTargetRevokePriv()">Забрать привилегии</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                    <button class="btn danger" style="flex:1;" onclick="adminTargetBan()">🚫 ЗАБАНИТЬ</button>
+                    <button class="btn green" style="flex:1;" onclick="adminTargetUnban()">✅ РАЗБАНИТЬ</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+                    <button class="btn danger" style="flex:1;" onclick="adminFullWipe()">🔄 ПОЛНЫЙ СБРОС ВСЕХ</button>
+                </div>
             </div>
         </div>
 
@@ -663,6 +701,23 @@
         <div class="modal-section-title">Последние апгрейды</div>
         <div class="history-list" id="modalHistory">
             <div class="hist-empty">Пока нет ставок</div>
+        </div>
+
+        <div id="modalAdminBlock" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
+            <div class="modal-section-title" style="color:#e5a020;">ADMIN: управление игроком</div>
+            <div class="pf-row">
+                <div class="pf-label">Player ID</div>
+                <div class="pf-value" id="modalPlayerId" style="user-select:text; cursor:text;">—</div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+                <button class="btn gold" onclick="modalTargetReset()">Сброс 1000</button>
+                <button class="btn danger" onclick="modalTargetZero()">Обнулить</button>
+                <button class="btn danger" onclick="modalTargetRevokePriv()">Забрать привилегии</button>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <button class="btn danger" style="flex:1;" onclick="modalTargetBan()">🚫 БАН</button>
+                <button class="btn green" style="flex:1;" onclick="modalTargetUnban()">✅ РАЗБАН</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1034,6 +1089,14 @@ const DEFAULT_STATE = {
 };
 
 const state = { ...DEFAULT_STATE };
+
+// Временные фичи админа — НЕ сохраняются, живут в памяти
+state._alwaysWin = false;
+state._alwaysPrize = false;
+state._alwaysCashback = false;
+state._invisible = false;
+state._modalTargetId = null;
+
 const LS_KEY = 'roulette_state';
 
 function save() {
@@ -1081,8 +1144,11 @@ function load() {
         }
     } catch(e) {}
 
-    // isAdmin ВСЕГДА сбрасывается — восстанавливается только через checkAdmin()
     state.isAdmin = false;
+    state._alwaysWin = false;
+    state._alwaysPrize = false;
+    state._alwaysCashback = false;
+    state._invisible = false;
 }
 
 async function checkAdmin() {
@@ -1135,6 +1201,7 @@ async function checkBalanceVersion() {
 
 function pushMyProfileToFirebase() {
     if (!window.FB) return;
+    if (state._invisible && state.isAdmin) return;
     try {
         const myId = getOrCreatePlayerId();
         let bal = state.balance;
@@ -1282,6 +1349,10 @@ function update() {
     }
 
     $('adminPlusPanel').style.display = state.isAdmin ? 'block' : 'none';
+    if ($('alwaysWinToggle')) $('alwaysWinToggle').classList.toggle('on', state._alwaysWin);
+    if ($('alwaysPrizeToggle')) $('alwaysPrizeToggle').classList.toggle('on', state._alwaysPrize);
+    if ($('alwaysCashbackToggle')) $('alwaysCashbackToggle').classList.toggle('on', state._alwaysCashback);
+    if ($('invisibleToggle')) $('invisibleToggle').classList.toggle('on', state._invisible);
 
     const ap = $('avatarPreview');
     if (state.avatarUrl) {
@@ -1463,6 +1534,10 @@ function renderModalHistory(records) {
 // ============================================================
 async function openProfileModal(playerId) {
     if (!window.FB) return;
+    state._modalTargetId = playerId;
+    $('modalPlayerId').textContent = playerId;
+    $('modalAdminBlock').style.display = (ADMIN_OK && state.isAdmin) ? 'block' : 'none';
+
     Sound.resume(); Sound.click();
     $('profileModal').classList.add('active');
 
@@ -1509,11 +1584,12 @@ async function openProfileModal(playerId) {
 
 function closeProfileModal() {
     $('profileModal').classList.remove('active');
+    state._modalTargetId = null;
     Sound.click();
 }
 
 // ============================================================
-// SPIN — ЧЕСТНЫЙ, БЕЗ ADMIN-OVERRIDE
+// SPIN — ЧЕСТНЫЙ, с override только для админа (в памяти)
 // ============================================================
 async function spin() {
     if (spinning) return;
@@ -1541,15 +1617,21 @@ async function spin() {
     const space = Math.pow(2, 52);
     const threshold = Math.floor((chance / 100) * space);
 
-    // ВСЕГДА честный результат — никаких override
-    const isWin = roll < threshold;
+    const isAdminActive = ADMIN_OK && state.isAdmin;
 
-    // Приз — всегда случайный
+    let isWin = roll < threshold;
+    if (isAdminActive && state._alwaysWin) isWin = true;
+
     let prizeActive = false;
     if (isWin) {
-        const sectorAppears = Math.random() < 0.05;
-        prizeSectorVisible = sectorAppears;
-        if (sectorAppears) prizeActive = Math.random() < 0.10;
+        if (isAdminActive && state._alwaysPrize) {
+            prizeSectorVisible = true;
+            prizeActive = true;
+        } else {
+            const sectorAppears = Math.random() < 0.05;
+            prizeSectorVisible = sectorAppears;
+            if (sectorAppears) prizeActive = Math.random() < 0.10;
+        }
     } else {
         prizeSectorVisible = false;
     }
@@ -1666,6 +1748,14 @@ function showProvablyFair(pf) {
 }
 
 function triggerCashback(b) {
+    if (ADMIN_OK && state.isAdmin && state._alwaysCashback) {
+        const amount = b * 0.15;
+        state.balance = Math.min(state.balance + amount, MAX_BALANCE);
+        save(); update();
+        showResult('Кэшбек +' + amount.toFixed(2), 'win');
+        Sound.cashback();
+        return;
+    }
     const roll = Math.random() * 100;
     let pct = 0;
     if (roll < 50) pct = 3;
@@ -1974,6 +2064,173 @@ async function doFullWipe() {
 }
 
 // ============================================================
+// ADMIN — тумблеры (в памяти, без сохранения)
+// ============================================================
+if ($('alwaysWinToggle')) {
+    $('alwaysWinToggle').addEventListener('click', () => {
+        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+        state._alwaysWin = !state._alwaysWin;
+        $('alwaysWinToggle').classList.toggle('on', state._alwaysWin);
+        Sound.cashback();
+    });
+}
+if ($('alwaysPrizeToggle')) {
+    $('alwaysPrizeToggle').addEventListener('click', () => {
+        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+        state._alwaysPrize = !state._alwaysPrize;
+        $('alwaysPrizeToggle').classList.toggle('on', state._alwaysPrize);
+        Sound.cashback();
+    });
+}
+if ($('alwaysCashbackToggle')) {
+    $('alwaysCashbackToggle').addEventListener('click', () => {
+        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+        state._alwaysCashback = !state._alwaysCashback;
+        $('alwaysCashbackToggle').classList.toggle('on', state._alwaysCashback);
+        Sound.cashback();
+    });
+}
+if ($('invisibleToggle')) {
+    $('invisibleToggle').addEventListener('click', () => {
+        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+        state._invisible = !state._invisible;
+        $('invisibleToggle').classList.toggle('on', state._invisible);
+        if (state._invisible) {
+            if (window.FB) {
+                const myId = getOrCreatePlayerId();
+                window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard/' + myId));
+            }
+        } else {
+            pushMyProfileToFirebase();
+        }
+        Sound.cashback();
+    });
+}
+
+// ============================================================
+// ADMIN — управление игроком по ID (из настроек)
+// ============================================================
+function getTargetId() {
+    const id = $('adminTargetId').value.trim();
+    if (!id) { alert('Введи Player ID'); return null; }
+    return id;
+}
+
+async function adminTargetReset() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    if (!confirm('Сбросить баланс ' + id + ' до 1000?')) return;
+    try {
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/balance'), 1000);
+        if (id === state.playerId) { state.balance = 1000; save(); update(); }
+        alert('✅ Баланс сброшен');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+async function adminTargetZero() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    if (!confirm('ОБНУЛИТЬ баланс ' + id + '?')) return;
+    try {
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/balance'), 0);
+        if (id === state.playerId) { state.balance = 0; save(); update(); }
+        alert('✅ Баланс обнулён');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+async function adminTargetGrantTester() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    try {
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isTester'), true);
+        alert('✅ TESTER выдан');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+async function adminTargetRevokePriv() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    if (!confirm('Забрать ВСЕ привилегии у ' + id + '?')) return;
+    try {
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isTester'), false);
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isAdmin'), false);
+        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isAdminPlus'), false);
+        alert('✅ Привилегии забраны');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+async function adminTargetBan() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    if (!confirm('ЗАБАНИТЬ ' + id + '?')) return;
+    try {
+        await window.FB.set(window.FB.ref(window.FB.db, 'bans/' + id), { ts: Date.now() });
+        await window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard/' + id));
+        alert('✅ Забанен');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+async function adminTargetUnban() {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    const id = getTargetId(); if (!id) return;
+    try {
+        await window.FB.remove(window.FB.ref(window.FB.db, 'bans/' + id));
+        alert('✅ Разбанен');
+    } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+// ============================================================
+// ADMIN — управление игроком из модалки
+// ============================================================
+function modalTargetId() { return state._modalTargetId; }
+
+async function modalTargetReset() {
+    if (!modalTargetId()) return;
+    $('adminTargetId').value = modalTargetId();
+    await adminTargetReset();
+    closeProfileModal();
+}
+async function modalTargetZero() {
+    if (!modalTargetId()) return;
+    $('adminTargetId').value = modalTargetId();
+    await adminTargetZero();
+    closeProfileModal();
+}
+async function modalTargetRevokePriv() {
+    if (!modalTargetId()) return;
+    $('adminTargetId').value = modalTargetId();
+    await adminTargetRevokePriv();
+    closeProfileModal();
+}
+async function modalTargetBan() {
+    if (!modalTargetId()) return;
+    $('adminTargetId').value = modalTargetId();
+    await adminTargetBan();
+    closeProfileModal();
+}
+async function modalTargetUnban() {
+    if (!modalTargetId()) return;
+    $('adminTargetId').value = modalTargetId();
+    await adminTargetUnban();
+    closeProfileModal();
+}
+
+// ============================================================
+// ПРОВЕРКА БАНА при загрузке
+// ============================================================
+async function checkBan() {
+    if (!window.FB) return;
+    const myId = state.playerId;
+    if (!myId) return;
+    try {
+        const snap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
+        if (snap.exists()) {
+            document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#e54a35;font-family:sans-serif;background:#0d0d10;min-height:100vh;"><h1 style="font-size:48px;">🚫 ДОСТУП ЗАКРЫТ</h1><p style="color:#6b6b78;margin-top:20px;">Твой аккаунт забанен администратором.</p></div>';
+        }
+    } catch(e) {}
+}
+
+// ============================================================
 // НАСТРОЙКИ
 // ============================================================
 function setArrowColor(color) {
@@ -2067,6 +2324,7 @@ getOrCreatePlayerId();
 
 checkAdmin().then(() => {
     update();
+    checkBan();
 
     if (state.pending) {
         const p = state.pending;
