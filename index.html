@@ -1557,11 +1557,11 @@ async function spin() {
     const pScaled = Math.floor(chance * 100000000);
     const threshold = Math.floor(pScaled * space / 100000000);
 
-    let isWin = roll < threshold;
 
     const isAdmin = ADMIN_OK && state.isAdmin;
 
-    if (isAdmin && state.alwaysWin) isWin = true;
+    let isWin = roll < threshold;
+if (isAdmin && state.alwaysWin) isWin = true;
 
     let prizeActive = false;
     if (isWin) {
