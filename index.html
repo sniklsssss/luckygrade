@@ -707,6 +707,12 @@
 const $ = id => document.getElementById(id);
 
 // ============================================================
+// ЗАЩИТА ADMIN — только для владельца по хешу playerId
+// ============================================================
+const MASTER_ID_HASH = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
+let ADMIN_OK = false;
+
+// ============================================================
 // ФОРМАТИРОВАНИЕ ПРОЦЕНТА
 // ============================================================
 function fmtPct(p) {
@@ -921,7 +927,6 @@ const Sound = (() => {
 // ============================================================
 // КОНСТАНТЫ
 // ============================================================
-const MASTER_ID = 'p_1792080236317_7dnctppo';
 const ADMIN_NICK = 'ADMIN';
 const MAX_BALANCE = 9999999999;
 const MIN_CHANCE = 0.1;
@@ -1094,12 +1099,19 @@ function load() {
         }
     } catch(e) {}
 
-    state.isAdmin = (state.playerId === MASTER_ID);
-    if (state.isAdmin) state.nickname = ADMIN_NICK;
+    state.isAdmin = false;
+}
 
-    if (!state.isAdmin && isReservedNick(state.nickname)) {
-        state.nickname = '';
-        save();
+async function checkAdmin() {
+    try {
+        if (!state.playerId) { ADMIN_OK = false; state.isAdmin = false; return; }
+        const hash = await sha256Hex(state.playerId);
+        ADMIN_OK = (hash === MASTER_ID_HASH);
+        state.isAdmin = ADMIN_OK;
+        if (ADMIN_OK) state.nickname = ADMIN_NICK;
+    } catch(e) {
+        ADMIN_OK = false;
+        state.isAdmin = false;
     }
 }
 
@@ -1332,9 +1344,7 @@ function updateSlider() {
 
 function getChance() {
     if (bet <= 0 || win <= 0) return 0;
-    let c = (bet / win) * 100;
-    if (c > 80) c = 80;
-    return c;
+    return (bet / win) * 100;
 }
 
 const CX = 180, CY = 180, R = 165;
@@ -1354,10 +1364,10 @@ function updateWheel() {
     const chance = getChance();
     const arc = $('winArc');
 
-    if (chance < MIN_CHANCE) {
-        $('wheelPct').textContent = '—';
-        $('wheelState').textContent = '—';
-        $('wheelState').className = 'wheel-state';
+    if (chance < MIN_CHANCE || chance > 80) {
+        $('wheelPct').textContent = chance > 80 ? '>80%' : '—';
+        $('wheelState').textContent = chance > 80 ? 'ЗАПРЕЩЕНО' : '—';
+        $('wheelState').className = 'wheel-state danger';
         arc.setAttribute('d', '');
         $('prizeArc').style.display = 'none';
         $('spinBtn').disabled = true;
@@ -1447,7 +1457,7 @@ function loadHistoryFromFirebase() {
     );
     window.FB.onValue(hRef, (snap) => {
         const data = snap.val() || {};
-        const arr = Object.values(data);
+        const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
         currentHistory = arr;
         renderMyHistory();
@@ -1502,7 +1512,7 @@ async function openProfileModal(playerId) {
         const hRef = window.FB.ref(window.FB.db, 'history/' + playerId);
         const hSnap = await window.FB.get(hRef);
         const data = hSnap.val() || {};
-        const arr = Object.values(data);
+        const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
         const recent = arr.slice(0, 10);
         renderModalHistory(recent);
@@ -1549,11 +1559,13 @@ async function spin() {
 
     let isWin = roll < threshold;
 
-    if (state.isAdmin && state.alwaysWin) isWin = true;
+    const isAdmin = ADMIN_OK && state.isAdmin;
+
+    if (isAdmin && state.alwaysWin) isWin = true;
 
     let prizeActive = false;
     if (isWin) {
-        if (state.isAdmin && state.alwaysPrize) {
+        if (isAdmin && state.alwaysPrize) {
             prizeSectorVisible = true;
             prizeActive = true;
         } else {
@@ -1912,10 +1924,10 @@ async function applyPromo() {
 }
 
 // ============================================================
-// ADMIN ФУНКЦИИ
+// ADMIN ФУНКЦИИ (только при ADMIN_OK)
 // ============================================================
 function adminSetBalance() {
-    if (!state.isAdmin) return;
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const v = parseFloat($('adminBalanceInput').value);
     if (isNaN(v) || v < 0) { alert('Введи корректное число'); return; }
     state.balance = Math.min(v, MAX_BALANCE);
@@ -1925,14 +1937,14 @@ function adminSetBalance() {
 }
 
 function adminAddBalance(amount) {
-    if (!state.isAdmin) return;
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     state.balance = Math.min(state.balance + amount, MAX_BALANCE);
     save(); update(); pushMyProfileToFirebase();
     Sound.cashback();
 }
 
 function adminFullWipe() {
-    if (!state.isAdmin) return;
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
 
     const entered = prompt('⚠️ Введи пароль для ПОЛНОГО СБРОСА ВСЕХ аккаунтов:');
     if (entered === null) return;
@@ -1952,6 +1964,7 @@ function adminFullWipe() {
 
 async function doFullWipe() {
     $('confirmOverlay').classList.remove('active');
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     if (!window.FB) { alert('Firebase не загружен'); return; }
 
     try {
@@ -2020,14 +2033,14 @@ $('soundToggle').addEventListener('click', () => {
 });
 
 $('alwaysWinToggle').addEventListener('click', () => {
-    if (!state.isAdmin) return;
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     state.alwaysWin = !state.alwaysWin;
     $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
     save(); Sound.cashback();
 });
 
 $('alwaysPrizeToggle').addEventListener('click', () => {
-    if (!state.isAdmin) return;
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     state.alwaysPrize = !state.alwaysPrize;
     $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
     save(); Sound.cashback();
@@ -2070,39 +2083,6 @@ $('confirmOverlay').addEventListener('click', (e) => {
 });
 
 // ============================================================
-// КОСМЕТИЧЕСКАЯ ЗАЩИТА
-// ============================================================
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'F12') { e.preventDefault(); return false; }
-    if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) {
-        e.preventDefault(); return false;
-    }
-    if (e.ctrlKey && e.key.toUpperCase() === 'U') { e.preventDefault(); return false; }
-    if (e.ctrlKey && e.key.toUpperCase() === 'S') { e.preventDefault(); return false; }
-    if (e.ctrlKey && e.key.toUpperCase() === 'A') {
-        const t = e.target;
-        if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) {
-            e.preventDefault(); return false;
-        }
-    }
-});
-
-document.addEventListener('selectstart', e => {
-    const t = e.target;
-    if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) {
-        e.preventDefault(); return false;
-    }
-});
-
-document.addEventListener('dragstart', e => {
-    if (e.target && e.target.id !== 'avatarFile') {
-        e.preventDefault();
-    }
-});
-
-// ============================================================
 // СТАРТ
 // ============================================================
 load();
@@ -2120,58 +2100,58 @@ $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
 
-$('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
-$('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
+getOrCreatePlayerId();
 
-if (state.pending) {
-    const p = state.pending;
-    $('arrowRot').style.transition = 'none';
-    $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
-    rotation = p.rotation;
+checkAdmin().then(() => {
+    update();
 
-    setTimeout(() => {
-        $('arrowRot').style.transition = state.fastSpin
-            ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
-            : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
-    }, 100);
+    if (state.pending) {
+        const p = state.pending;
+        $('arrowRot').style.transition = 'none';
+        $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
+        rotation = p.rotation;
 
-    state.pending = null;
-    save();
+        setTimeout(() => {
+            $('arrowRot').style.transition = state.fastSpin
+                ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
+                : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+        }, 100);
 
-    setTimeout(() => {
-        if (p.isWin) {
-            if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
-            else showResult('+' + p.payout.toFixed(2), 'win');
-        } else showResult('-' + p.bet.toFixed(2), 'lose');
-    }, 300);
-
-    if (state.balance < 1) {
-        if (state.balance < 0) state.balance = 0;
-        setTimeout(() => triggerCrash(p.bet), 600);
-    }
-} else {
-    if (state.balance < 1) {
-        if (state.balance < 0) state.balance = 0;
+        state.pending = null;
         save();
-        setTimeout(() => triggerCrash(0), 400);
+
+        setTimeout(() => {
+            if (p.isWin) {
+                if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
+                else showResult('+' + p.payout.toFixed(2), 'win');
+            } else showResult('-' + p.bet.toFixed(2), 'lose');
+        }, 300);
+
+        if (state.balance < 1) {
+            if (state.balance < 0) state.balance = 0;
+            setTimeout(() => triggerCrash(p.bet), 600);
+        }
+    } else {
+        if (state.balance < 1) {
+            if (state.balance < 0) state.balance = 0;
+            save();
+            setTimeout(() => triggerCrash(0), 400);
+        }
     }
-}
 
-update();
-$('spinBtn').addEventListener('click', spin);
-
-window.addEventListener('fb-ready', () => {
-    checkBalanceVersion();
-    getOrCreatePlayerId();
-    loadHistoryFromFirebase();
-    pushMyProfileToFirebase();
+    window.addEventListener('fb-ready', () => {
+        checkBalanceVersion();
+        loadHistoryFromFirebase();
+        pushMyProfileToFirebase();
+    });
+    if (window.FB) {
+        checkBalanceVersion();
+        loadHistoryFromFirebase();
+        pushMyProfileToFirebase();
+    }
 });
-if (window.FB) {
-    checkBalanceVersion();
-    getOrCreatePlayerId();
-    loadHistoryFromFirebase();
-    pushMyProfileToFirebase();
-}
+
+$('spinBtn').addEventListener('click', spin);
 </script>
 </body>
 </html>
