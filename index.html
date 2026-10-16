@@ -440,7 +440,6 @@
 </style>
 </head>
 <body>
-
 <div class="header">
     <div class="user-block">
         <div class="avatar" id="avatarLetter">?</div>
@@ -765,14 +764,15 @@
 </div>
 
 <script type="module">
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const FB = window.FB;
+const db = FB.db, ref = FB.ref, set = FB.set, get = FB.get, remove = FB.remove, push = FB.push, onValue = FB.onValue, query = FB.query, limitToLast = FB.limitToLast;
+const auth = FB.auth;
+const provider = FB.provider;
+const signInWithPopup = FB.signInWithPopup;
+const onAuthStateChanged = FB.onAuthStateChanged;
+const signOut = FB.signOut;
 
 const $ = id => document.getElementById(id);
-
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
-
-const ADMIN_SECRET = '6527fd65...';
 
 const ADMIN_SECRET = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
 const ADMIN_NICK = 'ADMIN';
@@ -1168,8 +1168,8 @@ let fbUnsubscribe = null;
 async function checkBalanceVersion() {
     if (!window.FB) return;
     try {
-        const vRef = window.FB.ref(window.FB.db, 'config/balanceVersion');
-        const snap = await window.FB.get(vRef);
+        const vRef = ref(db, 'config/balanceVersion');
+        const snap = await get(vRef);
         const serverVersion = snap.exists() ? snap.val() : 1;
         if (state.balanceVersion !== serverVersion) {
             if (!state.isAdmin) state.balance = 1000;
@@ -1187,7 +1187,7 @@ async function pushMyProfileToFirebase() {
     if (state._invisible && state.isAdmin) return;
     try {
         const myId = getOrCreatePlayerId();
-        const banSnap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
+        const banSnap = await get(ref(db, 'bans/' + myId));
         if (banSnap.exists()) return;
 
         let bal = state.balance;
@@ -1198,8 +1198,8 @@ async function pushMyProfileToFirebase() {
         if (state.isAdmin) sendName = ADMIN_NICK;
         else if (isReservedNick(sendName)) { sendName = 'Игрок'; state.nickname = ''; save(); }
 
-        const myRef = window.FB.ref(window.FB.db, 'leaderboard/' + myId);
-        await window.FB.set(myRef, {
+        const myRef = ref(db, 'leaderboard/' + myId);
+        await set(myRef, {
             name: sendName,
             balance: bal,
             avatarUrl: state.avatarUrl || '',
@@ -1215,8 +1215,8 @@ async function pushHistoryToFirebase(record) {
     if (!window.FB) return;
     try {
         const myId = getOrCreatePlayerId();
-        const hRef = window.FB.push(window.FB.ref(window.FB.db, 'history/' + myId));
-        await window.FB.set(hRef, record).catch(() => {});
+        const hRef = push(ref(db, 'history/' + myId));
+        await set(hRef, record).catch(() => {});
     } catch(e) { console.warn('History push failed', e); }
 }
 
@@ -1230,9 +1230,9 @@ function renderLeaderboard() {
             return;
         }
         pushMyProfileToFirebase();
-        const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
+        const lbRef = ref(db, 'leaderboard');
         if (fbUnsubscribe) { try { fbUnsubscribe(); } catch(e){} fbUnsubscribe = null; }
-        fbUnsubscribe = window.FB.onValue(lbRef, (snapshot) => {
+        fbUnsubscribe = onValue(lbRef, (snapshot) => {
             const data = snapshot.val() || {};
             const myId = state.playerId;
             const players = Object.entries(data).map(([id, p]) => {
@@ -1462,8 +1462,8 @@ function loadHistoryFromFirebase() {
     if (!window.FB) return;
     const myId = state.playerId;
     if (!myId) return;
-    const hRef = window.FB.query(window.FB.ref(window.FB.db, 'history/' + myId), window.FB.limitToLast(HISTORY_LIMIT));
-    window.FB.onValue(hRef, (snap) => {
+    const hRef = query(ref(db, 'history/' + myId), limitToLast(HISTORY_LIMIT));
+    onValue(hRef, (snap) => {
         const data = snap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -1494,8 +1494,8 @@ async function openProfileModal(playerId) {
     $('modalAvatar').textContent = '?';
     $('modalHistory').innerHTML = '<div class="hist-empty">Загрузка...</div>';
     try {
-        const pRef = window.FB.ref(window.FB.db, 'leaderboard/' + playerId);
-        const pSnap = await window.FB.get(pRef);
+        const pRef = ref(db, 'leaderboard/' + playerId);
+        const pSnap = await get(pRef);
         const p = pSnap.exists() ? pSnap.val() : {};
         $('modalName').textContent = p.name || 'Гость';
         const tags = [];
@@ -1510,8 +1510,8 @@ async function openProfileModal(playerId) {
         } else {
             av.textContent = (p.name || '?').charAt(0).toUpperCase();
         }
-        const hRef = window.FB.ref(window.FB.db, 'history/' + playerId);
-        const hSnap = await window.FB.get(hRef);
+        const hRef = ref(db, 'history/' + playerId);
+        const hSnap = await get(hRef);
         const data = hSnap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -1847,8 +1847,8 @@ async function applyPromo() {
     msg.textContent = 'Проверка...';
     msg.className = 'promo-msg';
     try {
-        const pRef = window.FB.ref(window.FB.db, 'promos/' + code);
-        const snap = await window.FB.get(pRef);
+        const pRef = ref(db, 'promos/' + code);
+        const snap = await get(pRef);
         if (!snap.exists()) { msg.textContent = 'Неверный промокод'; msg.className = 'promo-msg err'; return; }
         const promo = snap.val();
         const once = promo.once !== false;
@@ -1903,13 +1903,13 @@ async function doFullWipe() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     if (!window.FB) { alert('Firebase не загружен'); return; }
     try {
-        const vRef = window.FB.ref(window.FB.db, 'config/balanceVersion');
-        const vSnap = await window.FB.get(vRef);
+        const vRef = ref(db, 'config/balanceVersion');
+        const vSnap = await get(vRef);
         const oldV = vSnap.exists() ? vSnap.val() : 1;
         const newV = oldV + 1;
-        await window.FB.set(vRef, newV);
-        await window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard'));
-        await window.FB.remove(window.FB.ref(window.FB.db, 'history'));
+        await set(vRef, newV);
+        await remove(ref(db, 'leaderboard'));
+        await remove(ref(db, 'history'));
         state.balance = 1000;
         state.balanceVersion = newV;
         state.pending = null;
@@ -1958,7 +1958,7 @@ if ($('invisibleToggle')) {
         if (state._invisible) {
             if (window.FB) {
                 const myId = getOrCreatePlayerId();
-                window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard/' + myId));
+                remove(ref(db, 'leaderboard/' + myId));
             }
         } else {
             pushMyProfileToFirebase();
@@ -1978,7 +1978,7 @@ async function adminTargetReset() {
     const id = getTargetId(); if (!id) return;
     if (!confirm('Сбросить баланс ' + id + ' до 1000?')) return;
     try {
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/balance'), 1000);
+        await set(ref(db, 'leaderboard/' + id + '/balance'), 1000);
         if (id === state.playerId) { state.balance = 1000; save(); update(); }
         alert('✅ Баланс сброшен');
     } catch(e) { alert('Ошибка: ' + e.message); }
@@ -1989,7 +1989,7 @@ async function adminTargetZero() {
     const id = getTargetId(); if (!id) return;
     if (!confirm('ОБНУЛИТЬ баланс ' + id + '?')) return;
     try {
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/balance'), 0);
+        await set(ref(db, 'leaderboard/' + id + '/balance'), 0);
         if (id === state.playerId) { state.balance = 0; save(); update(); }
         alert('✅ Баланс обнулён');
     } catch(e) { alert('Ошибка: ' + e.message); }
@@ -1999,7 +1999,7 @@ async function adminTargetGrantTester() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
     try {
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isTester'), true);
+        await set(ref(db, 'leaderboard/' + id + '/isTester'), true);
         alert('✅ TESTER выдан');
     } catch(e) { alert('Ошибка: ' + e.message); }
 }
@@ -2009,9 +2009,9 @@ async function adminTargetRevokePriv() {
     const id = getTargetId(); if (!id) return;
     if (!confirm('Забрать ВСЕ привилегии у ' + id + '?')) return;
     try {
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isTester'), false);
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isAdmin'), false);
-        await window.FB.set(window.FB.ref(window.FB.db, 'leaderboard/' + id + '/isAdminPlus'), false);
+        await set(ref(db, 'leaderboard/' + id + '/isTester'), false);
+        await set(ref(db, 'leaderboard/' + id + '/isAdmin'), false);
+        await set(ref(db, 'leaderboard/' + id + '/isAdminPlus'), false);
         alert('✅ Привилегии забраны');
     } catch(e) { alert('Ошибка: ' + e.message); }
 }
@@ -2021,8 +2021,8 @@ async function adminTargetBan() {
     const id = getTargetId(); if (!id) return;
     if (!confirm('ЗАБАНИТЬ ' + id + '?')) return;
     try {
-        await window.FB.set(window.FB.ref(window.FB.db, 'bans/' + id), { ts: Date.now() });
-        await window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard/' + id));
+        await set(ref(db, 'bans/' + id), { ts: Date.now() });
+        await remove(ref(db, 'leaderboard/' + id));
         alert('✅ Забанен');
     } catch(e) { alert('Ошибка: ' + e.message); }
 }
@@ -2031,7 +2031,7 @@ async function adminTargetUnban() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
     try {
-        await window.FB.remove(window.FB.ref(window.FB.db, 'bans/' + id));
+        await remove(ref(db, 'bans/' + id));
         alert('✅ Разбанен');
     } catch(e) { alert('Ошибка: ' + e.message); }
 }
@@ -2049,7 +2049,7 @@ async function checkBan() {
     const myId = state.playerId;
     if (!myId) return false;
     try {
-        const snap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
+        const snap = await get(ref(db, 'bans/' + myId));
         if (snap.exists()) {
             document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#e54a35;font-family:sans-serif;background:#0d0d10;min-height:100vh;"><h1 style="font-size:48px;">🚫 ДОСТУП ЗАКРЫТ</h1><p style="color:#6b6b78;margin-top:20px;">Твой аккаунт забанен администратором.</p></div>';
             return true;
@@ -2124,7 +2124,7 @@ $('confirmOverlay').addEventListener('click', (e) => {
 // ============================================================
 // FIREBASE AUTH — вход через Google (в Настройках)
 // ============================================================
-document.getElementById('loginBtn').addEventListener('click', async () => {
+$('loginBtn').addEventListener('click', async () => {
     try {
         await signInWithPopup(auth, provider);
     } catch(e) {
@@ -2132,7 +2132,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+$('logoutBtn').addEventListener('click', async () => {
     try {
         await signOut(auth);
         location.reload();
@@ -2142,9 +2142,9 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 
 onAuthStateChanged(auth, (user) => {
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const emailSpan = document.getElementById('userEmail');
+    const loginBtn = $('loginBtn');
+    const logoutBtn = $('logoutBtn');
+    const emailSpan = $('userEmail');
 
     if (user) {
         loginBtn.style.display = 'none';
@@ -2164,6 +2164,34 @@ onAuthStateChanged(auth, (user) => {
         emailSpan.style.display = 'none';
     }
 });
+
+// ============================================================
+// ГЛОБАЛЬНЫЕ ФУНКЦИИ для onclick
+// ============================================================
+window.applyMult = applyMult;
+window.applyPercent = applyPercent;
+window.saveNick = saveNick;
+window.resetAvatar = resetAvatar;
+window.applyPromo = applyPromo;
+window.adminSetBalance = adminSetBalance;
+window.adminAddBalance = adminAddBalance;
+window.adminFullWipe = adminFullWipe;
+window.adminTargetReset = adminTargetReset;
+window.adminTargetZero = adminTargetZero;
+window.adminTargetGrantTester = adminTargetGrantTester;
+window.adminTargetRevokePriv = adminTargetRevokePriv;
+window.adminTargetBan = adminTargetBan;
+window.adminTargetUnban = adminTargetUnban;
+window.modalTargetReset = modalTargetReset;
+window.modalTargetZero = modalTargetZero;
+window.modalTargetRevokePriv = modalTargetRevokePriv;
+window.modalTargetBan = modalTargetBan;
+window.modalTargetUnban = modalTargetUnban;
+window.closeProfileModal = closeProfileModal;
+window.askReset = askReset;
+window.cancelReset = cancelReset;
+window.doReset = doReset;
+window.restartAfterCrash = restartAfterCrash;
 
 // ============================================================
 // СТАРТ
