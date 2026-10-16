@@ -1104,11 +1104,16 @@ function load() {
 
 async function checkAdmin() {
     try {
-        if (!state.playerId) { ADMIN_OK = false; state.isAdmin = false; return; }
-        const hash = await sha256Hex(state.playerId);
-        ADMIN_OK = (hash === MASTER_ID_HASH);
-        state.isAdmin = ADMIN_OK;
-        if (ADMIN_OK) state.nickname = ADMIN_NICK;
+        // Админ активируется только если в localStorage вручную вписан секрет
+        const secret = localStorage.getItem('lg_admin_key');
+        if (secret === '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351') {
+            ADMIN_OK = true;
+            state.isAdmin = true;
+            state.nickname = ADMIN_NICK;
+        } else {
+            ADMIN_OK = false;
+            state.isAdmin = false;
+        }
     } catch(e) {
         ADMIN_OK = false;
         state.isAdmin = false;
