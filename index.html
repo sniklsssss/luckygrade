@@ -436,7 +436,14 @@
 </style>
 </head>
 <body>
+<div id="loginBar" style="width:100%; max-width:1080px; margin-bottom:12px; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+    <button id="loginBtn" class="btn green" style="padding:10px 20px;">Войти через Google</button>
+    <button id="logoutBtn" class="btn danger" style="padding:10px 20px; display:none;">Выйти</button>
+    <span id="userEmail" style="color:#6b6b78; font-size:11px; display:none;"></span>
+</div>
+
 <div class="header">
+  <div class="header">
     <div class="user-block">
         <div class="avatar" id="avatarLetter">?</div>
         <div class="nick-wrap">
@@ -746,7 +753,9 @@
     <button class="crash-restart" onclick="restartAfterCrash()">Начать заново</button>
 </div>
 
-<script>
+<script type="module">
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 const $ = id => document.getElementById(id);
 
 const ADMIN_SECRET = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
@@ -2159,6 +2168,49 @@ checkAdmin().then(async () => {
         checkBalanceVersion();
         loadHistoryFromFirebase();
         pushMyProfileToFirebase();
+    }
+});
+// ============================================================
+// FIREBASE AUTH — вход через Google
+// ============================================================
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+    try {
+        await signInWithPopup(auth, provider);
+    } catch(e) {
+        alert('Ошибка входа: ' + e.message);
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    location.reload();
+});
+
+onAuthStateChanged(auth, (user) => {
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const emailSpan = document.getElementById('userEmail');
+
+    if (user) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        emailSpan.style.display = 'inline-block';
+        emailSpan.textContent = user.email || user.displayName || '';
+
+        // Привязываем playerId к UID Google
+        const oldId = state.playerId;
+        state.playerId = user.uid;
+        if (oldId !== user.uid) {
+            save();
+            setTimeout(() => location.reload(), 500);
+        }
+    } else {
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+        emailSpan.style.display = 'none';
     }
 });
 
