@@ -749,16 +749,10 @@
 <script>
 const $ = id => document.getElementById(id);
 
-// ============================================================
-// ЗАЩИТА ADMIN — только по секретному ключу в localStorage
-// ============================================================
 const ADMIN_SECRET = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
 const ADMIN_NICK = 'ADMIN';
 let ADMIN_OK = false;
 
-// ============================================================
-// ФОРМАТИРОВАНИЕ ПРОЦЕНТА
-// ============================================================
 function fmtPct(p) {
     if (!isFinite(p) || p <= 0) return '0.00';
     let val = Math.round(p * 100) / 100;
@@ -766,9 +760,6 @@ function fmtPct(p) {
     return val.toFixed(2);
 }
 
-// ============================================================
-// ЗВУКИ
-// ============================================================
 const Sound = (() => {
     let ctx = null;
     let enabled = true;
@@ -855,7 +846,6 @@ const Sound = (() => {
         resume() { getCtx(); },
         click() { tone(500, 0.06, 'sine', 0.04, 0, 0.005); },
         tick(intensity = 1) { tone(700 + Math.random() * 200, 0.04, 'sine', 0.025 * intensity, 0, 0.005); },
-
         win() {
             if (!enabled) return;
             const c = getCtx();
@@ -871,14 +861,9 @@ const Sound = (() => {
             sweep.connect(sg); sg.connect(master);
             if (verb) { const e = c.createGain(); e.gain.value = 0.3; sg.connect(e); e.connect(verb); }
             sweep.start(c.currentTime); sweep.stop(c.currentTime + 0.45);
-
-            [[523.25,0.00,0.10],[659.25,0.08,0.10],[783.99,0.16,0.10],
-             [1046.50,0.24,0.12],[1318.51,0.32,0.11],[1567.98,0.40,0.10]].forEach(([f,t,v]) => {
-                const o1 = c.createOscillator();
-                const o2 = c.createOscillator();
-                const g = c.createGain();
-                o1.type = 'sine'; o1.frequency.value = f;
-                o2.type = 'sine'; o2.frequency.value = f * 2;
+            [[523.25,0.00,0.10],[659.25,0.08,0.10],[783.99,0.16,0.10],[1046.50,0.24,0.12],[1318.51,0.32,0.11],[1567.98,0.40,0.10]].forEach(([f,t,v]) => {
+                const o1 = c.createOscillator(); const o2 = c.createOscillator(); const g = c.createGain();
+                o1.type = 'sine'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
                 const g2 = c.createGain(); g2.gain.value = 0.25;
                 g.gain.setValueAtTime(0, c.currentTime + t);
                 g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.01);
@@ -888,11 +873,8 @@ const Sound = (() => {
                 o1.start(c.currentTime + t); o1.stop(c.currentTime + t + 1.3);
                 o2.start(c.currentTime + t); o2.stop(c.currentTime + t + 1.3);
             });
-
-            [[2093,0.65,0.06],[2637,0.72,0.05],[3136,0.79,0.05],
-             [2093,0.90,0.04],[2637,0.97,0.04]].forEach(([f,t,v]) => {
-                const o = c.createOscillator();
-                const g = c.createGain();
+            [[2093,0.65,0.06],[2637,0.72,0.05],[3136,0.79,0.05],[2093,0.90,0.04],[2637,0.97,0.04]].forEach(([f,t,v]) => {
+                const o = c.createOscillator(); const g = c.createGain();
                 o.type = 'sine'; o.frequency.value = f;
                 g.gain.setValueAtTime(0, c.currentTime + t);
                 g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.005);
@@ -901,11 +883,8 @@ const Sound = (() => {
                 if (verb) { const e = c.createGain(); e.gain.value = 0.3; g.connect(e); e.connect(verb); }
                 o.start(c.currentTime + t); o.stop(c.currentTime + t + 0.7);
             });
-
-            [[261.63,1.05,0.08],[523.25,1.05,0.07],[659.25,1.05,0.07],
-             [783.99,1.05,0.07],[1046.50,1.05,0.09]].forEach(([f,t,v]) => {
-                const o = c.createOscillator();
-                const g = c.createGain();
+            [[261.63,1.05,0.08],[523.25,1.05,0.07],[659.25,1.05,0.07],[783.99,1.05,0.07],[1046.50,1.05,0.09]].forEach(([f,t,v]) => {
+                const o = c.createOscillator(); const g = c.createGain();
                 o.type = 'sine'; o.frequency.value = f;
                 g.gain.setValueAtTime(0, c.currentTime + t);
                 g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.02);
@@ -915,16 +894,13 @@ const Sound = (() => {
                 o.start(c.currentTime + t); o.stop(c.currentTime + t + 2.6);
             });
         },
-
         prize() {
             if (!enabled) return;
             Sound.win();
             const c = getCtx();
             const verb = getReverb();
-            [[1760,1.20,0.06],[2093,1.28,0.06],[2637,1.36,0.07],
-             [3136,1.44,0.07],[3520,1.52,0.06]].forEach(([f,t,v]) => {
-                const o = c.createOscillator();
-                const g = c.createGain();
+            [[1760,1.20,0.06],[2093,1.28,0.06],[2637,1.36,0.07],[3136,1.44,0.07],[3520,1.52,0.06]].forEach(([f,t,v]) => {
+                const o = c.createOscillator(); const g = c.createGain();
                 o.type = 'sine'; o.frequency.value = f;
                 g.gain.setValueAtTime(0, c.currentTime + t);
                 g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.01);
@@ -934,7 +910,6 @@ const Sound = (() => {
                 o.start(c.currentTime + t); o.stop(c.currentTime + t + 1.1);
             });
         },
-
         lose() {
             tone(220, 0.4, 'sine', 0.06, 0, 0.02);
             tone(165, 0.5, 'sine', 0.05, 0.15, 0.02);
@@ -968,9 +943,6 @@ const Sound = (() => {
     };
 })();
 
-// ============================================================
-// КОНСТАНТЫ
-// ============================================================
 const MAX_BALANCE = 9999999999;
 const MIN_CHANCE = 0.1;
 const FULL_WIPE_PASSWORD = 'qhdisopwjsosfjel12';
@@ -1035,9 +1007,6 @@ function containsBadWord(str) {
     return false;
 }
 
-// ============================================================
-// PROVABLY FAIR
-// ============================================================
 async function sha256Hex(text) {
     const enc = new TextEncoder();
     const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
@@ -1061,9 +1030,6 @@ function randomHex(len) {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, len);
 }
 
-// ============================================================
-// СОСТОЯНИЕ
-// ============================================================
 let bet = 100;
 let win = 125;
 let spinning = false;
@@ -1089,8 +1055,6 @@ const DEFAULT_STATE = {
 };
 
 const state = { ...DEFAULT_STATE };
-
-// Временные фичи админа — НЕ сохраняются, живут в памяти
 state._alwaysWin = false;
 state._alwaysPrize = false;
 state._alwaysCashback = false;
@@ -1103,7 +1067,6 @@ function save() {
     try {
         if (state.balance > MAX_BALANCE) state.balance = MAX_BALANCE;
         if (state.balance < 0) state.balance = 0;
-
         const toSave = {
             balance: state.balance,
             nickname: state.isAdmin ? ADMIN_NICK : state.nickname,
@@ -1143,7 +1106,6 @@ function load() {
             if (typeof parsed.nonce === 'number') state.nonce = parsed.nonce;
         }
     } catch(e) {}
-
     state.isAdmin = false;
     state._alwaysWin = false;
     state._alwaysPrize = false;
@@ -1176,9 +1138,6 @@ function getOrCreatePlayerId() {
     return state.playerId;
 }
 
-// ============================================================
-// FIREBASE
-// ============================================================
 let fbUnsubscribe = null;
 
 async function checkBalanceVersion() {
@@ -1187,7 +1146,6 @@ async function checkBalanceVersion() {
         const vRef = window.FB.ref(window.FB.db, 'config/balanceVersion');
         const snap = await window.FB.get(vRef);
         const serverVersion = snap.exists() ? snap.val() : 1;
-
         if (state.balanceVersion !== serverVersion) {
             if (!state.isAdmin) state.balance = 1000;
             state.balanceVersion = serverVersion;
@@ -1199,11 +1157,16 @@ async function checkBalanceVersion() {
     } catch(e) { console.warn('Version check failed', e); }
 }
 
-function pushMyProfileToFirebase() {
+async function pushMyProfileToFirebase() {
     if (!window.FB) return;
     if (state._invisible && state.isAdmin) return;
     try {
         const myId = getOrCreatePlayerId();
+
+        // ✅ Проверка бана ПЕРЕД записью
+        const banSnap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
+        if (banSnap.exists()) return;
+
         let bal = state.balance;
         if (!isFinite(bal) || bal > MAX_BALANCE) bal = MAX_BALANCE;
         if (bal < 0) bal = 0;
@@ -1243,9 +1206,7 @@ function renderLeaderboard() {
             list.innerHTML = '<div class="lb-empty">Firebase не загружен. Обновите страницу.</div>';
             return;
         }
-
         pushMyProfileToFirebase();
-
         const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
         if (fbUnsubscribe) { try { fbUnsubscribe(); } catch(e){} fbUnsubscribe = null; }
         fbUnsubscribe = window.FB.onValue(lbRef, (snapshot) => {
@@ -1255,23 +1216,10 @@ function renderLeaderboard() {
                 let bal = Number(p.balance);
                 if (!isFinite(bal) || bal > MAX_BALANCE) bal = MAX_BALANCE;
                 if (bal < 0) bal = 0;
-                return {
-                    id,
-                    name: p.name || 'Гость',
-                    balance: bal,
-                    avatarUrl: p.avatarUrl || '',
-                    isTester: !!p.isTester,
-                    isAdminPlus: !!p.isAdminPlus,
-                };
+                return { id, name: p.name || 'Гость', balance: bal, avatarUrl: p.avatarUrl || '', isTester: !!p.isTester, isAdminPlus: !!p.isAdminPlus };
             });
-
             players.sort((a, b) => b.balance - a.balance);
-
-            if (players.length === 0) {
-                list.innerHTML = '<div class="lb-empty">Пока пусто</div>';
-                return;
-            }
-
+            if (players.length === 0) { list.innerHTML = '<div class="lb-empty">Пока пусто</div>'; return; }
             list.innerHTML = '';
             players.forEach((p, i) => {
                 const row = document.createElement('div');
@@ -1295,20 +1243,14 @@ function renderLeaderboard() {
             });
         });
     };
-
     if (window.FB) tryRender();
     else window.addEventListener('fb-ready', tryRender, { once: true });
 }
 
 function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    })[c]);
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
 }
 
-// ============================================================
-// UI
-// ============================================================
 function update() {
     if (spinning || state.pending) {
         $('balanceTop').textContent = '—';
@@ -1370,7 +1312,6 @@ function updateStats() {
     $('betVal').textContent = bet.toFixed(2);
     $('statBet').textContent = bet.toFixed(2);
     $('statWin').textContent = win.toFixed(2);
-
     const chance = getChance();
     if (chance > 0 && chance <= 80) {
         const pct = fmtPct(chance);
@@ -1383,7 +1324,6 @@ function updateStats() {
         $('statMult').textContent = '—';
         $('winHint').textContent = '—';
     }
-
     if (document.activeElement !== $('winInputField')) {
         $('winInputField').value = win.toFixed(2);
     }
@@ -1419,7 +1359,6 @@ function arcPath(a1, a2) {
 function updateWheel() {
     const chance = getChance();
     const arc = $('winArc');
-
     if (chance < MIN_CHANCE || chance > 80) {
         $('wheelPct').textContent = chance > 80 ? '>80%' : '—';
         $('wheelState').textContent = chance > 80 ? 'ЗАПРЕЩЕНО' : '—';
@@ -1429,11 +1368,9 @@ function updateWheel() {
         $('spinBtn').disabled = true;
         return;
     }
-
     $('wheelPct').textContent = fmtPct(chance) + '%';
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
-
     if (prizeSectorVisible) {
         const prizeHalfDeg = (2 * half) * 0.10 / 2;
         $('prizeArc').setAttribute('d', arcPath(180 - prizeHalfDeg, 180 + prizeHalfDeg));
@@ -1441,7 +1378,6 @@ function updateWheel() {
     } else {
         $('prizeArc').style.display = 'none';
     }
-
     if (chance >= 50) {
         $('wheelState').textContent = 'Безопасно';
         $('wheelState').className = 'wheel-state safe';
@@ -1449,7 +1385,6 @@ function updateWheel() {
         $('wheelState').textContent = 'Опасно';
         $('wheelState').className = 'wheel-state danger';
     }
-
     $('spinBtn').disabled = spinning || chance > 80 || chance < MIN_CHANCE;
 }
 
@@ -1470,9 +1405,6 @@ function showResult(text, type_) {
     $('statResult').className = 'result ' + type_;
 }
 
-// ============================================================
-// ИСТОРИЯ
-// ============================================================
 function addToHistory(record) {
     currentHistory.unshift(record);
     if (currentHistory.length > HISTORY_LIMIT) currentHistory.length = HISTORY_LIMIT;
@@ -1507,10 +1439,7 @@ function loadHistoryFromFirebase() {
     if (!window.FB) return;
     const myId = state.playerId;
     if (!myId) return;
-    const hRef = window.FB.query(
-        window.FB.ref(window.FB.db, 'history/' + myId),
-        window.FB.limitToLast(HISTORY_LIMIT)
-    );
+    const hRef = window.FB.query(window.FB.ref(window.FB.db, 'history/' + myId), window.FB.limitToLast(HISTORY_LIMIT));
     window.FB.onValue(hRef, (snap) => {
         const data = snap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
@@ -1529,53 +1458,41 @@ function renderModalHistory(records) {
     box.innerHTML = records.map(r => renderHistRow(r)).join('');
 }
 
-// ============================================================
-// МОДАЛКА ЧУЖОГО ПРОФИЛЯ
-// ============================================================
 async function openProfileModal(playerId) {
     if (!window.FB) return;
     state._modalTargetId = playerId;
     $('modalPlayerId').textContent = playerId;
     $('modalAdminBlock').style.display = (ADMIN_OK && state.isAdmin) ? 'block' : 'none';
-
     Sound.resume(); Sound.click();
     $('profileModal').classList.add('active');
-
     $('modalName').textContent = 'Загрузка...';
     $('modalTags').innerHTML = '';
     $('modalBalance').textContent = '';
     $('modalAvatar').textContent = '?';
     $('modalHistory').innerHTML = '<div class="hist-empty">Загрузка...</div>';
-
     try {
         const pRef = window.FB.ref(window.FB.db, 'leaderboard/' + playerId);
         const pSnap = await window.FB.get(pRef);
         const p = pSnap.exists() ? pSnap.val() : {};
-
         $('modalName').textContent = p.name || 'Гость';
-
         const tags = [];
         if (p.isAdminPlus) tags.push('<span class="admin-tag admin-plus">ADMIN</span>');
         else if (p.isTester) tags.push('<span class="admin-tag tester">TESTER</span>');
         $('modalTags').innerHTML = tags.join('');
-
         const bal = Number(p.balance) || 0;
         $('modalBalance').textContent = 'Баланс: ' + bal.toFixed(2);
-
         const av = $('modalAvatar');
         if (p.avatarUrl) {
             av.innerHTML = `<img src="${escapeHtml(p.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
         } else {
             av.textContent = (p.name || '?').charAt(0).toUpperCase();
         }
-
         const hRef = window.FB.ref(window.FB.db, 'history/' + playerId);
         const hSnap = await window.FB.get(hRef);
         const data = hSnap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        const recent = arr.slice(0, 10);
-        renderModalHistory(recent);
+        renderModalHistory(arr.slice(0, 10));
     } catch(e) {
         console.warn('Profile load failed', e);
         $('modalHistory').innerHTML = '<div class="hist-empty">Ошибка загрузки</div>';
@@ -1588,15 +1505,10 @@ function closeProfileModal() {
     Sound.click();
 }
 
-// ============================================================
-// SPIN — ЧЕСТНЫЙ, с override только для админа (в памяти)
-// ============================================================
 async function spin() {
     if (spinning) return;
     if (bet <= 0) return;
-    if (Math.round(bet * 100) > Math.round(state.balance * 100)) {
-        showResult('Мало средств', 'lose'); return;
-    }
+    if (Math.round(bet * 100) > Math.round(state.balance * 100)) { showResult('Мало средств', 'lose'); return; }
     if (win <= bet) { showResult('Выигрыш > ставки', 'lose'); return; }
 
     const chance = getChance();
@@ -1618,7 +1530,6 @@ async function spin() {
     const threshold = Math.floor((chance / 100) * space);
 
     const isAdminActive = ADMIN_OK && state.isAdmin;
-
     let isWin = roll < threshold;
     if (isAdminActive && state._alwaysWin) isWin = true;
 
@@ -1678,12 +1589,10 @@ async function spin() {
 
     state.pending = { bet, win, chance, isWin, payout, isPrize: prizeActive, prizeVisible: prizeSectorVisible, rotation, timestamp: Date.now() };
     save();
-
     lastPF = { serverSeed, serverSeedHash, clientSeed, nonce, roll, threshold, chance, isWin, isPrize: prizeActive };
 
     spinning = true;
     update();
-
     $('spinBtn').disabled = true;
     $('statResult').textContent = '';
     $('statResult').className = 'result';
@@ -1792,9 +1701,6 @@ function restartAfterCrash() {
     $('screen-main').classList.add('active');
 }
 
-// ============================================================
-// ПОЛЗУНОК
-// ============================================================
 const slider = $('slider');
 let dragging = false;
 
@@ -1823,9 +1729,6 @@ slider.addEventListener('pointerup', e => {
 });
 slider.addEventListener('pointercancel', () => { dragging = false; });
 
-// ============================================================
-// ПОЛЕ ВЫИГРЫША
-// ============================================================
 $('winInputField').addEventListener('input', e => {
     let v = e.target.value.replace(/[^\d.]/g, '');
     const parts = v.split('.');
@@ -1850,9 +1753,6 @@ $('winInputField').addEventListener('keydown', e => {
     if (e.key === 'Enter') e.target.blur();
 });
 
-// ============================================================
-// ВКЛАДКИ
-// ============================================================
 document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
         Sound.resume(); Sound.click();
@@ -1864,9 +1764,6 @@ document.querySelectorAll('.tabs button').forEach(btn => {
     });
 });
 
-// ============================================================
-// ПРОФИЛЬ
-// ============================================================
 function saveNick() {
     if (state.isAdmin) {
         state.nickname = ADMIN_NICK;
@@ -1886,40 +1783,19 @@ function saveNick() {
     alert('Ник сохранён: ' + v);
 }
 
-// ============================================================
-// АВАТАРКА
-// ============================================================
 function checkImageSafe(file) {
     const name = (file.name || '').toLowerCase();
     const badNames = ['18+', 'porn', 'xxx', 'sex', 'nude', 'nsfw', 'hentai', 'naked'];
-    for (const b of badNames) {
-        if (name.includes(b)) return false;
-    }
+    for (const b of badNames) { if (name.includes(b)) return false; }
     return true;
 }
 
 $('avatarFile').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!/^image\/(png|jpeg|jpg|webp|gif)$/i.test(file.type)) {
-        alert('❌ Только PNG, JPG, WEBP или GIF.');
-        e.target.value = '';
-        return;
-    }
-
-    if (file.size > AVATAR_MAX_SIZE) {
-        alert('❌ Файл больше 200 КБ. Сожми картинку.');
-        e.target.value = '';
-        return;
-    }
-
-    if (!checkImageSafe(file)) {
-        alert('❌ Запрещённый контент.');
-        e.target.value = '';
-        return;
-    }
-
+    if (!/^image\/(png|jpeg|jpg|webp|gif)$/i.test(file.type)) { alert('❌ Только PNG, JPG, WEBP или GIF.'); e.target.value = ''; return; }
+    if (file.size > AVATAR_MAX_SIZE) { alert('❌ Файл больше 200 КБ. Сожми картинку.'); e.target.value = ''; return; }
+    if (!checkImageSafe(file)) { alert('❌ Запрещённый контент.'); e.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
         state.avatarUrl = ev.target.result;
@@ -1939,49 +1815,29 @@ function resetAvatar() {
     Sound.click();
 }
 
-// ============================================================
-// ПРОМОКОД
-// ============================================================
 async function applyPromo() {
     const code = $('promoInput').value.trim();
     const msg = $('promoMsg');
     Sound.resume();
-
     if (!code) { msg.textContent = 'Введи промокод'; msg.className = 'promo-msg err'; return; }
     if (!window.FB) { msg.textContent = 'Firebase не загружен'; msg.className = 'promo-msg err'; return; }
-
     msg.textContent = 'Проверка...';
     msg.className = 'promo-msg';
-
     try {
         const pRef = window.FB.ref(window.FB.db, 'promos/' + code);
         const snap = await window.FB.get(pRef);
-
-        if (!snap.exists()) {
-            msg.textContent = 'Неверный промокод';
-            msg.className = 'promo-msg err';
-            return;
-        }
-
+        if (!snap.exists()) { msg.textContent = 'Неверный промокод'; msg.className = 'promo-msg err'; return; }
         const promo = snap.val();
         const once = promo.once !== false;
-        if (once && state.usedPromos.includes(code)) {
-            msg.textContent = 'Промокод уже использован';
-            msg.className = 'promo-msg err';
-            return;
-        }
-
+        if (once && state.usedPromos.includes(code)) { msg.textContent = 'Промокод уже использован'; msg.className = 'promo-msg err'; return; }
         if (promo.balance) state.balance = Math.min(state.balance + Number(promo.balance), MAX_BALANCE);
         if (promo.tester) state.isTester = true;
         if (once) state.usedPromos.push(code);
-
         save(); update();
         pushMyProfileToFirebase();
-
         msg.textContent = promo.msg || 'Активировано';
         msg.className = 'promo-msg ' + (promo.msgType || 'ok');
         $('promoInput').value = '';
-
         if (promo.tester) Sound.prize();
         else Sound.win();
     } catch(e) {
@@ -1990,9 +1846,6 @@ async function applyPromo() {
     }
 }
 
-// ============================================================
-// ADMIN ФУНКЦИИ
-// ============================================================
 function adminSetBalance() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const v = parseFloat($('adminBalanceInput').value);
@@ -2012,16 +1865,9 @@ function adminAddBalance(amount) {
 
 function adminFullWipe() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-
     const entered = prompt('⚠️ Введи пароль для ПОЛНОГО СБРОСА ВСЕХ аккаунтов:');
     if (entered === null) return;
-
-    if (entered !== FULL_WIPE_PASSWORD) {
-        Sound.lose();
-        alert('❌ Неверный пароль.');
-        return;
-    }
-
+    if (entered !== FULL_WIPE_PASSWORD) { Sound.lose(); alert('❌ Неверный пароль.'); return; }
     $('confirmTitle').textContent = 'ПОЛНЫЙ СБРОС ВСЕХ?';
     $('confirmText').innerHTML = 'Это <b style="color:#e54a35;">НЕОБРАТИМОЕ</b> действие:<br><br>• Все балансы в Firebase → 1000<br>• Все записи лидерборда удалятся<br>• Вся история апгрейдов удалится<br>• Ники, статусы, промокоды — сбросятся<br><br>При следующем заходе все начнут с нуля.';
     $('confirmBtn').textContent = 'ДА, СБРОСИТЬ ВСЁ';
@@ -2033,17 +1879,14 @@ async function doFullWipe() {
     $('confirmOverlay').classList.remove('active');
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     if (!window.FB) { alert('Firebase не загружен'); return; }
-
     try {
         const vRef = window.FB.ref(window.FB.db, 'config/balanceVersion');
         const vSnap = await window.FB.get(vRef);
         const oldV = vSnap.exists() ? vSnap.val() : 1;
         const newV = oldV + 1;
         await window.FB.set(vRef, newV);
-
         await window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard'));
         await window.FB.remove(window.FB.ref(window.FB.db, 'history'));
-
         state.balance = 1000;
         state.balanceVersion = newV;
         state.pending = null;
@@ -2055,17 +1898,11 @@ async function doFullWipe() {
         save();
         update();
         pushMyProfileToFirebase();
-
         alert('✅ ПОЛНЫЙ СБРОС ВЫПОЛНЕН');
         renderLeaderboard();
-    } catch(err) {
-        alert('Ошибка: ' + err.message);
-    }
+    } catch(err) { alert('Ошибка: ' + err.message); }
 }
 
-// ============================================================
-// ADMIN — тумблеры (в памяти, без сохранения)
-// ============================================================
 if ($('alwaysWinToggle')) {
     $('alwaysWinToggle').addEventListener('click', () => {
         if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
@@ -2107,9 +1944,6 @@ if ($('invisibleToggle')) {
     });
 }
 
-// ============================================================
-// ADMIN — управление игроком по ID (из настроек)
-// ============================================================
 function getTargetId() {
     const id = $('adminTargetId').value.trim();
     if (!id) { alert('Введи Player ID'); return null; }
@@ -2179,60 +2013,28 @@ async function adminTargetUnban() {
     } catch(e) { alert('Ошибка: ' + e.message); }
 }
 
-// ============================================================
-// ADMIN — управление игроком из модалки
-// ============================================================
 function modalTargetId() { return state._modalTargetId; }
 
-async function modalTargetReset() {
-    if (!modalTargetId()) return;
-    $('adminTargetId').value = modalTargetId();
-    await adminTargetReset();
-    closeProfileModal();
-}
-async function modalTargetZero() {
-    if (!modalTargetId()) return;
-    $('adminTargetId').value = modalTargetId();
-    await adminTargetZero();
-    closeProfileModal();
-}
-async function modalTargetRevokePriv() {
-    if (!modalTargetId()) return;
-    $('adminTargetId').value = modalTargetId();
-    await adminTargetRevokePriv();
-    closeProfileModal();
-}
-async function modalTargetBan() {
-    if (!modalTargetId()) return;
-    $('adminTargetId').value = modalTargetId();
-    await adminTargetBan();
-    closeProfileModal();
-}
-async function modalTargetUnban() {
-    if (!modalTargetId()) return;
-    $('adminTargetId').value = modalTargetId();
-    await adminTargetUnban();
-    closeProfileModal();
-}
+async function modalTargetReset() { if (!modalTargetId()) return; $('adminTargetId').value = modalTargetId(); await adminTargetReset(); closeProfileModal(); }
+async function modalTargetZero() { if (!modalTargetId()) return; $('adminTargetId').value = modalTargetId(); await adminTargetZero(); closeProfileModal(); }
+async function modalTargetRevokePriv() { if (!modalTargetId()) return; $('adminTargetId').value = modalTargetId(); await adminTargetRevokePriv(); closeProfileModal(); }
+async function modalTargetBan() { if (!modalTargetId()) return; $('adminTargetId').value = modalTargetId(); await adminTargetBan(); closeProfileModal(); }
+async function modalTargetUnban() { if (!modalTargetId()) return; $('adminTargetId').value = modalTargetId(); await adminTargetUnban(); closeProfileModal(); }
 
-// ============================================================
-// ПРОВЕРКА БАНА при загрузке
-// ============================================================
 async function checkBan() {
-    if (!window.FB) return;
+    if (!window.FB) return false;
     const myId = state.playerId;
-    if (!myId) return;
+    if (!myId) return false;
     try {
         const snap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
         if (snap.exists()) {
             document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#e54a35;font-family:sans-serif;background:#0d0d10;min-height:100vh;"><h1 style="font-size:48px;">🚫 ДОСТУП ЗАКРЫТ</h1><p style="color:#6b6b78;margin-top:20px;">Твой аккаунт забанен администратором.</p></div>';
+            return true;
         }
     } catch(e) {}
+    return false;
 }
 
-// ============================================================
-// НАСТРОЙКИ
-// ============================================================
 function setArrowColor(color) {
     state.arrowColor = color;
     document.documentElement.style.setProperty('--arrow', color);
@@ -2266,9 +2068,6 @@ $('soundToggle').addEventListener('click', () => {
     save();
 });
 
-// ============================================================
-// СБРОС ЛИЧНОГО БАЛАНСА
-// ============================================================
 function askReset() {
     Sound.resume(); Sound.click();
     $('confirmTitle').textContent = 'Уверен?';
@@ -2292,9 +2091,6 @@ function doReset() {
     update(); pushMyProfileToFirebase();
 }
 
-// ============================================================
-// ЗАКРЫТИЕ МОДАЛОК
-// ============================================================
 $('profileModal').addEventListener('click', (e) => {
     if (e.target.id === 'profileModal') closeProfileModal();
 });
@@ -2302,9 +2098,6 @@ $('confirmOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'confirmOverlay') cancelReset();
 });
 
-// ============================================================
-// СТАРТ
-// ============================================================
 load();
 
 document.documentElement.style.setProperty('--arrow', state.arrowColor);
@@ -2322,32 +2115,29 @@ $('nickInput').value = state.nickname;
 
 getOrCreatePlayerId();
 
-checkAdmin().then(() => {
+checkAdmin().then(async () => {
     update();
-    checkBan();
+    const banned = await checkBan();
+    if (banned) return;
 
     if (state.pending) {
         const p = state.pending;
         $('arrowRot').style.transition = 'none';
         $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
         rotation = p.rotation;
-
         setTimeout(() => {
             $('arrowRot').style.transition = state.fastSpin
                 ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
                 : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
         }, 100);
-
         state.pending = null;
         save();
-
         setTimeout(() => {
             if (p.isWin) {
                 if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
                 else showResult('+' + p.payout.toFixed(2), 'win');
             } else showResult('-' + p.bet.toFixed(2), 'lose');
         }, 300);
-
         if (state.balance < 1) {
             if (state.balance < 0) state.balance = 0;
             setTimeout(() => triggerCrash(p.bet), 600);
