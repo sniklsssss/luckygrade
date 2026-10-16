@@ -43,7 +43,6 @@ const Sound = (() => {
     let enabled = true;
     let master = null;
     let reverbNode = null;
-
     function getCtx() {
         if (!ctx) {
             ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -54,7 +53,6 @@ const Sound = (() => {
         if (ctx.state === 'suspended') ctx.resume();
         return ctx;
     }
-
     function tone(freq, duration, type = 'sine', volume = 0.1, when = 0, attack = 0.02) {
         if (!enabled) return;
         const c = getCtx();
@@ -69,17 +67,13 @@ const Sound = (() => {
         osc.start(c.currentTime + when);
         osc.stop(c.currentTime + when + duration + 0.05);
     }
-
     function softNoise(duration, volume = 0.08, cutoff = 800, when = 0) {
         if (!enabled) return;
         const c = getCtx();
         const bs = Math.floor(c.sampleRate * duration);
         const buffer = c.createBuffer(1, bs, c.sampleRate);
         const data = buffer.getChannelData(0);
-        for (let i = 0; i < bs; i++) {
-            const t = i / bs;
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3);
-        }
+        for (let i = 0; i < bs; i++) { const t = i / bs; data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3); }
         const src = c.createBufferSource();
         src.buffer = buffer;
         const filt = c.createBiquadFilter();
@@ -94,7 +88,6 @@ const Sound = (() => {
         src.start(c.currentTime + when);
         src.stop(c.currentTime + when + duration + 0.05);
     }
-
     function createReverb(duration = 2.5) {
         const c = getCtx();
         const conv = c.createConvolver();
@@ -102,10 +95,7 @@ const Sound = (() => {
         const buf = c.createBuffer(2, len, c.sampleRate);
         for (let ch = 0; ch < 2; ch++) {
             const data = buf.getChannelData(ch);
-            for (let i = 0; i < len; i++) {
-                const t = i / len;
-                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.5);
-            }
+            for (let i = 0; i < len; i++) { const t = i / len; data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.5); }
         }
         conv.buffer = buf;
         const convGain = c.createGain();
@@ -113,12 +103,7 @@ const Sound = (() => {
         conv.connect(convGain); convGain.connect(master);
         return conv;
     }
-
-    function getReverb() {
-        if (!reverbNode) reverbNode = createReverb(2.5);
-        return reverbNode;
-    }
-
+    function getReverb() { if (!reverbNode) reverbNode = createReverb(2.5); return reverbNode; }
     return {
         setEnabled(v) { enabled = v; },
         resume() { getCtx(); },
@@ -128,8 +113,7 @@ const Sound = (() => {
             if (!enabled) return;
             const c = getCtx();
             const verb = getReverb();
-            const sweep = c.createOscillator();
-            const sg = c.createGain();
+            const sweep = c.createOscillator(); const sg = c.createGain();
             sweep.type = 'sine';
             sweep.frequency.setValueAtTime(300, c.currentTime);
             sweep.frequency.exponentialRampToValueAtTime(1200, c.currentTime + 0.35);
@@ -175,8 +159,7 @@ const Sound = (() => {
         prize() {
             if (!enabled) return;
             Sound.win();
-            const c = getCtx();
-            const verb = getReverb();
+            const c = getCtx(); const verb = getReverb();
             [[1760,1.20,0.06],[2093,1.28,0.06],[2637,1.36,0.07],[3136,1.44,0.07],[3520,1.52,0.06]].forEach(([f,t,v]) => {
                 const o = c.createOscillator(); const g = c.createGain();
                 o.type = 'sine'; o.frequency.value = f;
@@ -254,11 +237,7 @@ function normalizeNick(str) {
     if (!str) return '';
     let s = String(str).toLowerCase().trim();
     s = s.replace(/[\s\.\-_,\(\)\[\]\{\}\/\\|:;!@#\$%\^&\+=]/g, '');
-    const map = {
-        'a':'а','e':'е','o':'о','c':'с','p':'р','x':'х','y':'у','k':'к',
-        'm':'м','t':'т','h':'н','b':'в','0':'о','1':'l','3':'з','4':'а',
-        '5':'s','6':'б','7':'т','8':'в','9':'g','@':'а','$':'s','!':'i',
-    };
+    const map = { 'a':'а','e':'е','o':'о','c':'с','p':'р','x':'х','y':'у','k':'к','m':'м','t':'т','h':'н','b':'в','0':'о','1':'l','3':'з','4':'а','5':'s','6':'б','7':'т','8':'в','9':'g','@':'а','$':'s','!':'i' };
     let normalized = '';
     for (const ch of s) normalized += map[ch] || ch;
     normalized = normalized.replace(/(.)\1+/g, '$1');
@@ -279,9 +258,7 @@ function isReservedNick(str) {
 function containsBadWord(str) {
     if (!str) return false;
     const cleaned = String(str).toLowerCase().replace(/[\s\.\-_,\*\(\)\[\]\{\}\/\\|:;!@#\$%\^&\+=]/g, '');
-    for (const w of BAD_WORDS) {
-        if (cleaned.includes(w)) return true;
-    }
+    for (const w of BAD_WORDS) { if (cleaned.includes(w)) return true; }
     return false;
 }
 
@@ -293,11 +270,7 @@ async function sha256Hex(text) {
 
 async function hmacSha256Hex(key, message) {
     const enc = new TextEncoder();
-    const cryptoKey = await crypto.subtle.importKey(
-        'raw', enc.encode(key),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false, ['sign']
-    );
+    const cryptoKey = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
     const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
     return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -317,19 +290,9 @@ let currentHistory = [];
 let lastPF = null;
 
 const DEFAULT_STATE = {
-    balance: 1000,
-    nickname: '',
-    playerId: '',
-    avatarUrl: '',
-    isTester: false,
-    isAdmin: false,
-    usedPromos: [],
-    arrowColor: '#c23a2b',
-    fastSpin: false,
-    soundOn: true,
-    pending: null,
-    balanceVersion: 1,
-    nonce: 0,
+    balance: 1000, nickname: '', playerId: '', avatarUrl: '',
+    isTester: false, isAdmin: false, usedPromos: [], arrowColor: '#c23a2b',
+    fastSpin: false, soundOn: true, pending: null, balanceVersion: 1, nonce: 0,
 };
 
 const state = { ...DEFAULT_STATE };
@@ -368,9 +331,7 @@ function load() {
         const raw = localStorage.getItem(LS_KEY);
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (typeof parsed.balance === 'number' && isFinite(parsed.balance)) {
-                state.balance = Math.min(parsed.balance, MAX_BALANCE);
-            }
+            if (typeof parsed.balance === 'number' && isFinite(parsed.balance)) state.balance = Math.min(parsed.balance, MAX_BALANCE);
             if (typeof parsed.nickname === 'string') state.nickname = parsed.nickname;
             if (typeof parsed.playerId === 'string') state.playerId = parsed.playerId;
             if (typeof parsed.avatarUrl === 'string') state.avatarUrl = parsed.avatarUrl;
@@ -394,25 +355,13 @@ function load() {
 async function checkAdmin() {
     try {
         const secret = localStorage.getItem('lg_admin_key');
-        if (secret === ADMIN_SECRET) {
-            ADMIN_OK = true;
-            state.isAdmin = true;
-            state.nickname = ADMIN_NICK;
-        } else {
-            ADMIN_OK = false;
-            state.isAdmin = false;
-        }
-    } catch(e) {
-        ADMIN_OK = false;
-        state.isAdmin = false;
-    }
+        if (secret === ADMIN_SECRET) { ADMIN_OK = true; state.isAdmin = true; state.nickname = ADMIN_NICK; }
+        else { ADMIN_OK = false; state.isAdmin = false; }
+    } catch(e) { ADMIN_OK = false; state.isAdmin = false; }
 }
 
 function getOrCreatePlayerId() {
-    if (!state.playerId) {
-        state.playerId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-        save();
-    }
+    if (!state.playerId) { state.playerId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10); save(); }
     return state.playerId;
 }
 
@@ -427,9 +376,7 @@ async function checkBalanceVersion() {
             if (!state.isAdmin) state.balance = 1000;
             state.balanceVersion = serverVersion;
             state.pending = null;
-            save();
-            update();
-            pushMyProfileToFirebase();
+            save(); update(); pushMyProfileToFirebase();
         }
     } catch(e) { console.warn('Version check failed', e); }
 }
@@ -440,23 +387,15 @@ async function pushMyProfileToFirebase() {
         const myId = getOrCreatePlayerId();
         const banSnap = await get(ref(db, 'bans/' + myId));
         if (banSnap.exists()) return;
-
         let bal = state.balance;
         if (!isFinite(bal) || bal > MAX_BALANCE) bal = MAX_BALANCE;
         if (bal < 0) bal = 0;
-
         let sendName = state.nickname || 'Гость';
         if (state.isAdmin) sendName = ADMIN_NICK;
         else if (isReservedNick(sendName)) { sendName = 'Игрок'; state.nickname = ''; save(); }
-
-        const myRef = ref(db, 'leaderboard/' + myId);
-        await set(myRef, {
-            name: sendName,
-            balance: bal,
-            avatarUrl: state.avatarUrl || '',
-            isTester: state.isTester,
-            isAdminPlus: state.isAdmin,
-            isAdmin: state.isAdmin,
+        await set(ref(db, 'leaderboard/' + myId), {
+            name: sendName, balance: bal, avatarUrl: state.avatarUrl || '',
+            isTester: state.isTester, isAdminPlus: state.isAdmin, isAdmin: state.isAdmin,
             updatedAt: Date.now(),
         }).catch(() => {});
     } catch(e) { console.warn('Firebase push failed', e); }
@@ -465,20 +404,16 @@ async function pushMyProfileToFirebase() {
 async function pushHistoryToFirebase(record) {
     try {
         const myId = getOrCreatePlayerId();
-        const hRef = push(ref(db, 'history/' + myId));
-        await set(hRef, record).catch(() => {});
-    } catch(e) { console.warn('History push failed', e); }
+        await set(push(ref(db, 'history/' + myId)), record).catch(() => {});
+    } catch(e) {}
 }
 
 function renderLeaderboard() {
     const list = $('leaderboardList');
     list.innerHTML = '<div class="lb-empty">Загрузка...</div>';
-
     pushMyProfileToFirebase();
-
-    const lbRef = ref(db, 'leaderboard');
     if (fbUnsubscribe) { try { fbUnsubscribe(); } catch(e){} fbUnsubscribe = null; }
-    fbUnsubscribe = onValue(lbRef, (snapshot) => {
+    fbUnsubscribe = onValue(ref(db, 'leaderboard'), (snapshot) => {
         const data = snapshot.val() || {};
         const myId = state.playerId;
         const players = Object.entries(data).map(([id, p]) => {
@@ -520,8 +455,7 @@ function escapeHtml(s) {
 function update() {
     if (spinning || state.pending) {
         $('balanceTop').textContent = '—';
-        $('balanceTop').classList.remove('zero');
-        $('balanceTop').classList.add('hidden');
+        $('balanceTop').classList.remove('zero'); $('balanceTop').classList.add('hidden');
     } else {
         let b = state.balance;
         if (!isFinite(b) || b > MAX_BALANCE) b = MAX_BALANCE;
@@ -530,48 +464,25 @@ function update() {
         $('balanceTop').classList.remove('hidden');
     }
     $('nickDisplay').textContent = state.isAdmin ? ADMIN_NICK : (state.nickname || 'Гость');
-
-    const av = $('avatarLetter');
-    const tag = $('adminTag');
-    av.classList.remove('tester', 'admin-plus');
-    tag.classList.remove('tester', 'admin-plus');
-
+    const av = $('avatarLetter'); const tag = $('adminTag');
+    av.classList.remove('tester', 'admin-plus'); tag.classList.remove('tester', 'admin-plus');
     if (state.avatarUrl) {
         av.innerHTML = `<img src="${escapeHtml(state.avatarUrl)}" onerror="this.parentNode.textContent='${escapeHtml((state.isAdmin ? ADMIN_NICK : state.nickname || '?').charAt(0).toUpperCase())}'">`;
     } else {
         av.textContent = (state.isAdmin ? ADMIN_NICK : state.nickname || '?').charAt(0).toUpperCase();
     }
-
-    if (state.isAdmin) {
-        tag.style.display = 'inline-block';
-        tag.textContent = 'ADMIN';
-        tag.classList.add('admin-plus');
-        av.classList.add('admin-plus');
-    } else if (state.isTester) {
-        tag.style.display = 'inline-block';
-        tag.textContent = 'TESTER';
-        tag.classList.add('tester');
-        av.classList.add('tester');
-    } else {
-        tag.style.display = 'none';
-    }
-
+    if (state.isAdmin) { tag.style.display = 'inline-block'; tag.textContent = 'ADMIN'; tag.classList.add('admin-plus'); av.classList.add('admin-plus'); }
+    else if (state.isTester) { tag.style.display = 'inline-block'; tag.textContent = 'TESTER'; tag.classList.add('tester'); av.classList.add('tester'); }
+    else { tag.style.display = 'none'; }
     $('adminPlusPanel').style.display = state.isAdmin ? 'block' : 'none';
     if ($('alwaysWinToggle')) $('alwaysWinToggle').classList.toggle('on', state._alwaysWin);
     if ($('alwaysPrizeToggle')) $('alwaysPrizeToggle').classList.toggle('on', state._alwaysPrize);
     if ($('alwaysCashbackToggle')) $('alwaysCashbackToggle').classList.toggle('on', state._alwaysCashback);
     if ($('invisibleToggle')) $('invisibleToggle').classList.toggle('on', state._invisible);
-
     const ap = $('avatarPreview');
-    if (state.avatarUrl) {
-        ap.innerHTML = `<img src="${escapeHtml(state.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
-    } else {
-        ap.textContent = '?';
-    }
-
-    updateWheel();
-    updateStats();
-    updateSlider();
+    if (state.avatarUrl) ap.innerHTML = `<img src="${escapeHtml(state.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
+    else ap.textContent = '?';
+    updateWheel(); updateStats(); updateSlider();
 }
 
 function updateStats() {
@@ -580,59 +491,41 @@ function updateStats() {
     $('statWin').textContent = win.toFixed(2);
     const chance = getChance();
     if (chance > 0 && chance <= 80) {
-        const pct = fmtPct(chance);
-        const mult = (100 / chance).toFixed(2);
+        const pct = fmtPct(chance); const mult = (100 / chance).toFixed(2);
         $('statChance').textContent = pct + '%';
         $('statMult').textContent = 'x' + mult;
         $('winHint').textContent = 'x' + mult;
-    } else {
-        $('statChance').textContent = '—';
-        $('statMult').textContent = '—';
-        $('winHint').textContent = '—';
-    }
-    if (document.activeElement !== $('winInputField')) {
-        $('winInputField').value = win.toFixed(2);
-    }
+    } else { $('statChance').textContent = '—'; $('statMult').textContent = '—'; $('winHint').textContent = '—'; }
+    if (document.activeElement !== $('winInputField')) $('winInputField').value = win.toFixed(2);
 }
 
 function updateSlider() {
     if (spinning || state.pending) return;
     const max = Math.max(state.balance, 1);
     const pct = Math.max(0, Math.min(100, (bet / max) * 100));
-    $('sliderFill').style.width = pct + '%';
-    $('sliderKnob').style.left = pct + '%';
+    $('sliderFill').style.width = pct + '%'; $('sliderKnob').style.left = pct + '%';
     $('betMax').textContent = '(макс ' + max.toFixed(2) + ')';
 }
 
-function getChance() {
-    if (bet <= 0 || win <= 0) return 0;
-    return (bet / win) * 100;
-}
+function getChance() { if (bet <= 0 || win <= 0) return 0; return (bet / win) * 100; }
 
 const CX = 180, CY = 180, R = 165;
-
 function arcPath(a1, a2) {
-    const s = (a1 - 90) * Math.PI / 180;
-    const e = (a2 - 90) * Math.PI / 180;
-    const x1 = CX + R * Math.cos(s);
-    const y1 = CY + R * Math.sin(s);
-    const x2 = CX + R * Math.cos(e);
-    const y2 = CY + R * Math.sin(e);
+    const s = (a1 - 90) * Math.PI / 180; const e = (a2 - 90) * Math.PI / 180;
+    const x1 = CX + R * Math.cos(s); const y1 = CY + R * Math.sin(s);
+    const x2 = CX + R * Math.cos(e); const y2 = CY + R * Math.sin(e);
     const large = (a2 - a1) > 180 ? 1 : 0;
     return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`;
 }
 
 function updateWheel() {
-    const chance = getChance();
-    const arc = $('winArc');
+    const chance = getChance(); const arc = $('winArc');
     if (chance < MIN_CHANCE || chance > 80) {
         $('wheelPct').textContent = chance > 80 ? '>80%' : '—';
         $('wheelState').textContent = chance > 80 ? 'ЗАПРЕЩЕНО' : '—';
         $('wheelState').className = 'wheel-state danger';
-        arc.setAttribute('d', '');
-        $('prizeArc').style.display = 'none';
-        $('spinBtn').disabled = true;
-        return;
+        arc.setAttribute('d', ''); $('prizeArc').style.display = 'none';
+        $('spinBtn').disabled = true; return;
     }
     $('wheelPct').textContent = fmtPct(chance) + '%';
     const half = (chance / 100) * 180;
@@ -641,35 +534,15 @@ function updateWheel() {
         const prizeHalfDeg = (2 * half) * 0.10 / 2;
         $('prizeArc').setAttribute('d', arcPath(180 - prizeHalfDeg, 180 + prizeHalfDeg));
         $('prizeArc').style.display = '';
-    } else {
-        $('prizeArc').style.display = 'none';
-    }
-    if (chance >= 50) {
-        $('wheelState').textContent = 'Безопасно';
-        $('wheelState').className = 'wheel-state safe';
-    } else {
-        $('wheelState').textContent = 'Опасно';
-        $('wheelState').className = 'wheel-state danger';
-    }
+    } else { $('prizeArc').style.display = 'none'; }
+    if (chance >= 50) { $('wheelState').textContent = 'Безопасно'; $('wheelState').className = 'wheel-state safe'; }
+    else { $('wheelState').textContent = 'Опасно'; $('wheelState').className = 'wheel-state danger'; }
     $('spinBtn').disabled = spinning || chance > 80 || chance < MIN_CHANCE;
 }
 
-function applyMult(m) {
-    Sound.resume(); Sound.click();
-    win = bet * m;
-    if ((bet / win) * 100 > 80) win = bet * (100 / 80);
-    update();
-}
-function applyPercent(p) {
-    Sound.resume(); Sound.click();
-    win = bet * (100 / p);
-    update();
-}
-
-function showResult(text, type_) {
-    $('statResult').textContent = text;
-    $('statResult').className = 'result ' + type_;
-}
+function applyMult(m) { Sound.resume(); Sound.click(); win = bet * m; if ((bet / win) * 100 > 80) win = bet * (100 / 80); update(); }
+function applyPercent(p) { Sound.resume(); Sound.click(); win = bet * (100 / p); update(); }
+function showResult(text, type_) { $('statResult').textContent = text; $('statResult').className = 'result ' + type_; }
 
 function addToHistory(record) {
     currentHistory.unshift(record);
@@ -679,47 +552,33 @@ function addToHistory(record) {
 
 function renderMyHistory() {
     const box = $('myHistory');
-    if (!currentHistory || currentHistory.length === 0) {
-        box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>';
-        return;
-    }
+    if (!currentHistory || currentHistory.length === 0) { box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>'; return; }
     box.innerHTML = currentHistory.map(r => renderHistRow(r)).join('');
 }
 
 function renderHistRow(r) {
     const cls = r.type === 'prize' ? 'prize' : (r.win ? 'win' : 'lose');
     const icon = r.type === 'prize' ? '★' : (r.win ? '✓' : '✕');
-    const betVal = Number(r.bet).toFixed(2);
-    const winVal = Number(r.targetWin).toFixed(2);
+    const betVal = Number(r.bet).toFixed(2); const winVal = Number(r.targetWin).toFixed(2);
     const profit = r.win ? '+' + Number(r.payout).toFixed(2) : '-' + Number(r.bet).toFixed(2);
     const time = r.ts ? new Date(r.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
-    return `<div class="hist-row ${cls}">
-        <div class="hist-icon">${icon}</div>
-        <div class="hist-text"><b>${betVal}</b> → <b>${winVal}</b> (${fmtPct(r.chance)}%)</div>
-        <div class="hist-profit ${cls}">${profit}</div>
-        <div class="hist-time">${time}</div>
-    </div>`;
+    return `<div class="hist-row ${cls}"><div class="hist-icon">${icon}</div><div class="hist-text"><b>${betVal}</b> → <b>${winVal}</b> (${fmtPct(r.chance)}%)</div><div class="hist-profit ${cls}">${profit}</div><div class="hist-time">${time}</div></div>`;
 }
 
 function loadHistoryFromFirebase() {
     const myId = state.playerId;
     if (!myId) return;
-    const hRef = query(ref(db, 'history/' + myId), limitToLast(HISTORY_LIMIT));
-    onValue(hRef, (snap) => {
+    onValue(query(ref(db, 'history/' + myId), limitToLast(HISTORY_LIMIT)), (snap) => {
         const data = snap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        currentHistory = arr;
-        renderMyHistory();
+        currentHistory = arr; renderMyHistory();
     });
 }
 
 function renderModalHistory(records) {
     const box = $('modalHistory');
-    if (!records || records.length === 0) {
-        box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>';
-        return;
-    }
+    if (!records || records.length === 0) { box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>'; return; }
     box.innerHTML = records.map(r => renderHistRow(r)).join('');
 }
 
@@ -729,38 +588,26 @@ async function openProfileModal(playerId) {
     $('modalAdminBlock').style.display = (ADMIN_OK && state.isAdmin) ? 'block' : 'none';
     Sound.resume(); Sound.click();
     $('profileModal').classList.add('active');
-    $('modalName').textContent = 'Загрузка...';
-    $('modalTags').innerHTML = '';
-    $('modalBalance').textContent = '';
-    $('modalAvatar').textContent = '?';
+    $('modalName').textContent = 'Загрузка...'; $('modalTags').innerHTML = '';
+    $('modalBalance').textContent = ''; $('modalAvatar').textContent = '?';
     $('modalHistory').innerHTML = '<div class="hist-empty">Загрузка...</div>';
     try {
-        const pRef = ref(db, 'leaderboard/' + playerId);
-        const pSnap = await get(pRef);
-        const p = pSnap.exists() ? pSnap.val() : {};
+        const p = (await get(ref(db, 'leaderboard/' + playerId))).val() || {};
         $('modalName').textContent = p.name || 'Гость';
         const tags = [];
         if (p.isAdminPlus) tags.push('<span class="admin-tag admin-plus">ADMIN</span>');
         else if (p.isTester) tags.push('<span class="admin-tag tester">TESTER</span>');
         $('modalTags').innerHTML = tags.join('');
-        const bal = Number(p.balance) || 0;
-        $('modalBalance').textContent = 'Баланс: ' + bal.toFixed(2);
+        $('modalBalance').textContent = 'Баланс: ' + (Number(p.balance) || 0).toFixed(2);
         const av = $('modalAvatar');
-        if (p.avatarUrl) {
-            av.innerHTML = `<img src="${escapeHtml(p.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
-        } else {
-            av.textContent = (p.name || '?').charAt(0).toUpperCase();
-        }
-        const hRef = ref(db, 'history/' + playerId);
-        const hSnap = await get(hRef);
+        if (p.avatarUrl) av.innerHTML = `<img src="${escapeHtml(p.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
+        else av.textContent = (p.name || '?').charAt(0).toUpperCase();
+        const hSnap = await get(ref(db, 'history/' + playerId));
         const data = hSnap.val() || {};
         const arr = Object.values(data).filter(r => r && typeof r === 'object');
         arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
         renderModalHistory(arr.slice(0, 10));
-    } catch(e) {
-        console.warn('Profile load failed', e);
-        $('modalHistory').innerHTML = '<div class="hist-empty">Ошибка загрузки</div>';
-    }
+    } catch(e) { $('modalHistory').innerHTML = '<div class="hist-empty">Ошибка загрузки</div>'; }
 }
 
 function closeProfileModal() {
@@ -774,130 +621,72 @@ async function spin() {
     if (bet <= 0) return;
     if (Math.round(bet * 100) > Math.round(state.balance * 100)) { showResult('Мало средств', 'lose'); return; }
     if (win <= bet) { showResult('Выигрыш > ставки', 'lose'); return; }
-
     const chance = getChance();
     if (chance > 80) { showResult('Шанс > 80%', 'lose'); return; }
     if (chance < MIN_CHANCE) { showResult('Шанс < 0.1%', 'lose'); return; }
-
     Sound.resume();
-
     state.nonce++;
-    const serverSeed = randomHex(64);
-    const serverSeedHash = await sha256Hex(serverSeed);
-    const clientSeed = randomHex(32);
-    const nonce = state.nonce;
-
+    const serverSeed = randomHex(64); const serverSeedHash = await sha256Hex(serverSeed);
+    const clientSeed = randomHex(32); const nonce = state.nonce;
     const digest = await hmacSha256Hex(serverSeed, clientSeed + ':' + nonce);
-    const rollHex = digest.substring(0, 13);
-    const roll = parseInt(rollHex, 16);
+    const roll = parseInt(digest.substring(0, 13), 16);
     const space = Math.pow(2, 52);
     const threshold = Math.floor((chance / 100) * space);
-
     const isAdminActive = ADMIN_OK && state.isAdmin;
     let isWin = roll < threshold;
     if (isAdminActive && state._alwaysWin) isWin = true;
-
     let prizeActive = false;
     if (isWin) {
-        if (isAdminActive && state._alwaysPrize) {
-            prizeSectorVisible = true;
-            prizeActive = true;
-        } else {
-            const sectorAppears = Math.random() < 0.05;
-            prizeSectorVisible = sectorAppears;
-            if (sectorAppears) prizeActive = Math.random() < 0.10;
-        }
-    } else {
-        prizeSectorVisible = false;
-    }
-
+        if (isAdminActive && state._alwaysPrize) { prizeSectorVisible = true; prizeActive = true; }
+        else { const sectorAppears = Math.random() < 0.05; prizeSectorVisible = sectorAppears; if (sectorAppears) prizeActive = Math.random() < 0.10; }
+    } else { prizeSectorVisible = false; }
     updateWheel();
-
     let payout = 0;
-    if (isWin) {
-        payout = bet * (100 / chance);
-        if (prizeActive) payout *= 2;
-    }
-
+    if (isWin) { payout = bet * (100 / chance); if (prizeActive) payout *= 2; }
     state.balance -= bet;
     if (isWin) state.balance += payout;
     if (state.balance > MAX_BALANCE) state.balance = MAX_BALANCE;
-
     const half = (chance / 100) * 180;
     const prizeHalfDeg = (2 * half) * 0.10 / 2;
-
     let target;
     if (isWin) {
-        if (prizeActive && prizeSectorVisible) {
-            target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
-        } else {
+        if (prizeActive && prizeSectorVisible) target = 180 - prizeHalfDeg + Math.random() * (2 * prizeHalfDeg);
+        else {
             if (prizeSectorVisible) {
-                const leftSize = half - prizeHalfDeg;
-                const rightSize = half - prizeHalfDeg;
+                const leftSize = half - prizeHalfDeg; const rightSize = half - prizeHalfDeg;
                 if (Math.random() < 0.5) target = (180 - half) + Math.random() * leftSize;
                 else target = (180 + prizeHalfDeg) + Math.random() * rightSize;
-            } else {
-                target = (180 - half) + Math.random() * (2 * half);
-            }
+            } else target = (180 - half) + Math.random() * (2 * half);
         }
     } else {
         if (Math.random() < 0.5) target = Math.random() * (180 - half);
         else target = (180 + half) + Math.random() * (180 - half);
     }
-
     const turns = 5 + Math.floor(Math.random() * 3);
     const norm = ((rotation % 360) + 360) % 360;
-    let delta = target - norm;
-    if (delta < 0) delta += 360;
+    let delta = target - norm; if (delta < 0) delta += 360;
     rotation += turns * 360 + delta;
-
     state.pending = { bet, win, chance, isWin, payout, isPrize: prizeActive, prizeVisible: prizeSectorVisible, rotation, timestamp: Date.now() };
     save();
     lastPF = { serverSeed, serverSeedHash, clientSeed, nonce, roll, threshold, chance, isWin, isPrize: prizeActive };
-
-    spinning = true;
-    update();
-    $('spinBtn').disabled = true;
-    $('statResult').textContent = '';
-    $('statResult').className = 'result';
+    spinning = true; update();
+    $('spinBtn').disabled = true; $('statResult').textContent = ''; $('statResult').className = 'result';
     $('arrowRot').style.transform = `rotate(${rotation}deg)`;
-
     const duration = state.fastSpin ? 3000 : 6000;
     Sound.startSpinTicks(duration);
-
     setTimeout(() => {
-        spinning = false;
-        $('spinBtn').disabled = false;
-        state.pending = null;
-        save();
-
-        const histRecord = {
-            bet: bet, targetWin: win, chance: chance,
-            win: isWin, isPrize: prizeActive, payout: payout,
-            type: prizeActive ? 'prize' : (isWin ? 'win' : 'lose'),
-            ts: Date.now(),
-        };
-        addToHistory(histRecord);
-        pushHistoryToFirebase(histRecord);
-
+        spinning = false; $('spinBtn').disabled = false; state.pending = null; save();
+        const histRecord = { bet, targetWin: win, chance, win: isWin, isPrize: prizeActive, payout, type: prizeActive ? 'prize' : (isWin ? 'win' : 'lose'), ts: Date.now() };
+        addToHistory(histRecord); pushHistoryToFirebase(histRecord);
         if (isWin) {
             if (prizeActive) { showResult('★ ПРИЗ +' + payout.toFixed(2) + ' ★', 'prize'); Sound.prize(); }
             else { showResult('+' + payout.toFixed(2), 'win'); Sound.win(); }
         } else {
-            showResult('-' + bet.toFixed(2), 'lose');
-            Sound.lose();
+            showResult('-' + bet.toFixed(2), 'lose'); Sound.lose();
             if (bet >= 5000 && state.balance > 0) triggerCashback(bet);
         }
-
-        prizeSectorVisible = false;
-        update();
-        pushMyProfileToFirebase();
-        showProvablyFair(lastPF);
-
-        if (state.balance < 1) {
-            if (state.balance < 0) { state.balance = 0; save(); update(); }
-            setTimeout(() => triggerCrash(bet), 600);
-        }
+        prizeSectorVisible = false; update(); pushMyProfileToFirebase(); showProvablyFair(lastPF);
+        if (state.balance < 1) { if (state.balance < 0) { state.balance = 0; save(); update(); } setTimeout(() => triggerCrash(bet), 600); }
     }, duration + 100);
 }
 
@@ -911,35 +700,23 @@ function showProvablyFair(pf) {
     $('pfRoll').textContent = pf.roll;
     $('pfThreshold').textContent = pf.threshold;
     const res = $('pfResult');
-    if (pf.isWin) {
-        res.textContent = pf.isPrize ? 'ВЫИГРЫШ + ПРИЗ' : 'ВЫИГРЫШ';
-        res.className = 'pf-value win';
-    } else {
-        res.textContent = 'ПРОИГРЫШ';
-        res.className = 'pf-value lose';
-    }
+    if (pf.isWin) { res.textContent = pf.isPrize ? 'ВЫИГРЫШ + ПРИЗ' : 'ВЫИГРЫШ'; res.className = 'pf-value win'; }
+    else { res.textContent = 'ПРОИГРЫШ'; res.className = 'pf-value lose'; }
 }
 
 function triggerCashback(b) {
     if (ADMIN_OK && state.isAdmin && state._alwaysCashback) {
         const amount = b * 0.15;
         state.balance = Math.min(state.balance + amount, MAX_BALANCE);
-        save(); update();
-        showResult('Кэшбек +' + amount.toFixed(2), 'win');
-        Sound.cashback();
+        save(); update(); showResult('Кэшбек +' + amount.toFixed(2), 'win'); Sound.cashback();
         return;
     }
-    const roll = Math.random() * 100;
-    let pct = 0;
-    if (roll < 50) pct = 3;
-    else if (roll < 70) pct = 5;
-    else if (roll < 71) pct = 15;
+    const roll = Math.random() * 100; let pct = 0;
+    if (roll < 50) pct = 3; else if (roll < 70) pct = 5; else if (roll < 71) pct = 15;
     if (pct === 0) return;
     const amount = b * (pct / 100);
     state.balance = Math.min(state.balance + amount, MAX_BALANCE);
-    save(); update();
-    showResult('Кэшбек +' + amount.toFixed(2), 'win');
-    Sound.cashback();
+    save(); update(); showResult('Кэшбек +' + amount.toFixed(2), 'win'); Sound.cashback();
 }
 
 function triggerCrash(b) {
@@ -950,23 +727,16 @@ function triggerCrash(b) {
 }
 
 function restartAfterCrash() {
-    state.balance = 1000;
-    state.pending = null;
-    bet = 100;
-    win = 125;
-    prizeSectorVisible = false;
-    save();
-    $('crashOverlay').classList.remove('active');
-    update();
-    pushMyProfileToFirebase();
+    state.balance = 1000; state.pending = null;
+    bet = 100; win = 125; prizeSectorVisible = false; save();
+    $('crashOverlay').classList.remove('active'); update(); pushMyProfileToFirebase();
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelector('[data-tab="main"]').classList.add('active');
     $('screen-main').classList.add('active');
 }
 
-const slider = $('slider');
-let dragging = false;
+const slider = $('slider'); let dragging = false;
 
 function setBetFromPointer(clientX) {
     const rect = slider.getBoundingClientRect();
@@ -976,35 +746,21 @@ function setBetFromPointer(clientX) {
     update();
 }
 
-slider.addEventListener('pointerdown', e => {
-    dragging = true;
-    try { slider.setPointerCapture(e.pointerId); } catch(err){}
-    setBetFromPointer(e.clientX);
-    e.preventDefault();
-});
-slider.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    setBetFromPointer(e.clientX);
-    e.preventDefault();
-});
-slider.addEventListener('pointerup', e => {
-    dragging = false;
-    try { slider.releasePointerCapture(e.pointerId); } catch(err) {}
-});
+slider.addEventListener('pointerdown', e => { dragging = true; try { slider.setPointerCapture(e.pointerId); } catch(err){} setBetFromPointer(e.clientX); e.preventDefault(); });
+slider.addEventListener('pointermove', e => { if (!dragging) return; setBetFromPointer(e.clientX); e.preventDefault(); });
+slider.addEventListener('pointerup', e => { dragging = false; try { slider.releasePointerCapture(e.pointerId); } catch(err) {} });
 slider.addEventListener('pointercancel', () => { dragging = false; });
 
 $('winInputField').addEventListener('input', e => {
     let v = e.target.value.replace(/[^\d.]/g, '');
-    const parts = v.split('.');
-    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    const parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
     e.target.value = v;
     const num = parseFloat(v);
     if (isNaN(num) || num <= 0) return;
     if (num <= bet) return;
     const chance = (bet / num) * 100;
     win = chance > 80 ? bet * (100 / 80) : num;
-    updateStats();
-    updateWheel();
+    updateStats(); updateWheel();
 });
 $('winInputField').addEventListener('blur', () => {
     const num = parseFloat($('winInputField').value);
@@ -1013,9 +769,7 @@ $('winInputField').addEventListener('blur', () => {
     else win = num;
     update();
 });
-$('winInputField').addEventListener('keydown', e => {
-    if (e.key === 'Enter') e.target.blur();
-});
+$('winInputField').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
 
 document.querySelectorAll('.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1029,21 +783,13 @@ document.querySelectorAll('.tabs button').forEach(btn => {
 });
 
 function saveNick() {
-    if (state.isAdmin) {
-        state.nickname = ADMIN_NICK;
-        save(); update();
-        pushMyProfileToFirebase();
-        alert('У ADMIN ник всегда ADMIN.');
-        return;
-    }
+    if (state.isAdmin) { state.nickname = ADMIN_NICK; save(); update(); pushMyProfileToFirebase(); alert('У ADMIN ник всегда ADMIN.'); return; }
     const v = $('nickInput').value.trim();
     if (v.length < 1) return alert('Введи ник');
     if (v.length > 20) return alert('Ник слишком длинный');
     if (containsBadWord(v)) return alert('❌ Ник содержит запрещённые слова.');
     if (isReservedNick(v)) return alert('❌ Этот ник зарезервирован.');
-    state.nickname = v;
-    save(); update();
-    pushMyProfileToFirebase();
+    state.nickname = v; save(); update(); pushMyProfileToFirebase();
     alert('Ник сохранён: ' + v);
 }
 
@@ -1055,28 +801,18 @@ function checkImageSafe(file) {
 }
 
 $('avatarFile').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     if (!/^image\/(png|jpeg|jpg|webp|gif)$/i.test(file.type)) { alert('❌ Только PNG, JPG, WEBP или GIF.'); e.target.value = ''; return; }
-    if (file.size > AVATAR_MAX_SIZE) { alert('❌ Файл больше 200 КБ. Сожми картинку.'); e.target.value = ''; return; }
+    if (file.size > AVATAR_MAX_SIZE) { alert('❌ Файл больше 200 КБ.'); e.target.value = ''; return; }
     if (!checkImageSafe(file)) { alert('❌ Запрещённый контент.'); e.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = (ev) => {
-        state.avatarUrl = ev.target.result;
-        save(); update();
-        pushMyProfileToFirebase();
-        Sound.click();
-    };
-    reader.onerror = () => alert('❌ Ошибка чтения файла');
+    reader.onload = (ev) => { state.avatarUrl = ev.target.result; save(); update(); pushMyProfileToFirebase(); Sound.click(); };
     reader.readAsDataURL(file);
 });
 
 function resetAvatar() {
-    state.avatarUrl = '';
-    $('avatarFile').value = '';
-    save(); update();
-    pushMyProfileToFirebase();
-    Sound.click();
+    state.avatarUrl = ''; $('avatarFile').value = '';
+    save(); update(); pushMyProfileToFirebase(); Sound.click();
 }
 
 async function applyPromo() {
@@ -1084,11 +820,9 @@ async function applyPromo() {
     const msg = $('promoMsg');
     Sound.resume();
     if (!code) { msg.textContent = 'Введи промокод'; msg.className = 'promo-msg err'; return; }
-    msg.textContent = 'Проверка...';
-    msg.className = 'promo-msg';
+    msg.textContent = 'Проверка...'; msg.className = 'promo-msg';
     try {
-        const pRef = ref(db, 'promos/' + code);
-        const snap = await get(pRef);
+        const snap = await get(ref(db, 'promos/' + code));
         if (!snap.exists()) { msg.textContent = 'Неверный промокод'; msg.className = 'promo-msg err'; return; }
         const promo = snap.val();
         const once = promo.once !== false;
@@ -1096,17 +830,12 @@ async function applyPromo() {
         if (promo.balance) state.balance = Math.min(state.balance + Number(promo.balance), MAX_BALANCE);
         if (promo.tester) state.isTester = true;
         if (once) state.usedPromos.push(code);
-        save(); update();
-        pushMyProfileToFirebase();
+        save(); update(); pushMyProfileToFirebase();
         msg.textContent = promo.msg || 'Активировано';
         msg.className = 'promo-msg ' + (promo.msgType || 'ok');
         $('promoInput').value = '';
-        if (promo.tester) Sound.prize();
-        else Sound.win();
-    } catch(e) {
-        msg.textContent = 'Ошибка: ' + e.message;
-        msg.className = 'promo-msg err';
-    }
+        if (promo.tester) Sound.prize(); else Sound.win();
+    } catch(e) { msg.textContent = 'Ошибка: ' + e.message; msg.className = 'promo-msg err'; }
 }
 
 function adminSetBalance() {
@@ -1122,8 +851,7 @@ function adminSetBalance() {
 function adminAddBalance(amount) {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     state.balance = Math.min(state.balance + amount, MAX_BALANCE);
-    save(); update(); pushMyProfileToFirebase();
-    Sound.cashback();
+    save(); update(); pushMyProfileToFirebase(); Sound.cashback();
 }
 
 function adminFullWipe() {
@@ -1144,65 +872,43 @@ async function doFullWipe() {
     try {
         const vRef = ref(db, 'config/balanceVersion');
         const vSnap = await get(vRef);
-        const oldV = vSnap.exists() ? vSnap.val() : 1;
-        const newV = oldV + 1;
+        const newV = (vSnap.exists() ? vSnap.val() : 1) + 1;
         await set(vRef, newV);
         await remove(ref(db, 'leaderboard'));
         await remove(ref(db, 'history'));
-        state.balance = 1000;
-        state.balanceVersion = newV;
-        state.pending = null;
-        state.nonce = 0;
-        bet = 100;
-        win = 125;
-        currentHistory = [];
-        renderMyHistory();
-        save();
-        update();
-        pushMyProfileToFirebase();
+        state.balance = 1000; state.balanceVersion = newV;
+        state.pending = null; state.nonce = 0;
+        bet = 100; win = 125;
+        currentHistory = []; renderMyHistory();
+        save(); update(); pushMyProfileToFirebase();
         alert('✅ ПОЛНЫЙ СБРОС ВЫПОЛНЕН');
         renderLeaderboard();
     } catch(err) { alert('Ошибка: ' + err.message); }
 }
 
-if ($('alwaysWinToggle')) {
-    $('alwaysWinToggle').addEventListener('click', () => {
-        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-        state._alwaysWin = !state._alwaysWin;
-        $('alwaysWinToggle').classList.toggle('on', state._alwaysWin);
-        Sound.cashback();
-    });
-}
-if ($('alwaysPrizeToggle')) {
-    $('alwaysPrizeToggle').addEventListener('click', () => {
-        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-        state._alwaysPrize = !state._alwaysPrize;
-        $('alwaysPrizeToggle').classList.toggle('on', state._alwaysPrize);
-        Sound.cashback();
-    });
-}
-if ($('alwaysCashbackToggle')) {
-    $('alwaysCashbackToggle').addEventListener('click', () => {
-        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-        state._alwaysCashback = !state._alwaysCashback;
-        $('alwaysCashbackToggle').classList.toggle('on', state._alwaysCashback);
-        Sound.cashback();
-    });
-}
-if ($('invisibleToggle')) {
-    $('invisibleToggle').addEventListener('click', () => {
-        if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-        state._invisible = !state._invisible;
-        $('invisibleToggle').classList.toggle('on', state._invisible);
-        if (state._invisible) {
-            const myId = getOrCreatePlayerId();
-            remove(ref(db, 'leaderboard/' + myId));
-        } else {
-            pushMyProfileToFirebase();
-        }
-        Sound.cashback();
-    });
-}
+if ($('alwaysWinToggle')) $('alwaysWinToggle').addEventListener('click', () => {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    state._alwaysWin = !state._alwaysWin;
+    $('alwaysWinToggle').classList.toggle('on', state._alwaysWin); Sound.cashback();
+});
+if ($('alwaysPrizeToggle')) $('alwaysPrizeToggle').addEventListener('click', () => {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    state._alwaysPrize = !state._alwaysPrize;
+    $('alwaysPrizeToggle').classList.toggle('on', state._alwaysPrize); Sound.cashback();
+});
+if ($('alwaysCashbackToggle')) $('alwaysCashbackToggle').addEventListener('click', () => {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    state._alwaysCashback = !state._alwaysCashback;
+    $('alwaysCashbackToggle').classList.toggle('on', state._alwaysCashback); Sound.cashback();
+});
+if ($('invisibleToggle')) $('invisibleToggle').addEventListener('click', () => {
+    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
+    state._invisible = !state._invisible;
+    $('invisibleToggle').classList.toggle('on', state._invisible);
+    if (state._invisible) { const myId = getOrCreatePlayerId(); remove(ref(db, 'leaderboard/' + myId)); }
+    else pushMyProfileToFirebase();
+    Sound.cashback();
+});
 
 function getTargetId() {
     const id = $('adminTargetId').value.trim();
@@ -1210,47 +916,42 @@ function getTargetId() {
     return id;
 }
 
+// ============================================================
+// ЧЕРЕЗ КОМАНДЫ — работает даже если игрок офлайн
+// ============================================================
+async function sendCommand(id, action) {
+    await set(ref(db, 'commands/' + id), { action, ts: Date.now() });
+}
+
 async function adminTargetReset() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
     if (!confirm('Сбросить баланс ' + id + ' до 1000?')) return;
-    try {
-        await set(ref(db, 'leaderboard/' + id + '/balance'), 1000);
-        if (id === state.playerId) { state.balance = 1000; save(); update(); }
-        alert('✅ Баланс сброшен');
-    } catch(e) { alert('Ошибка: ' + e.message); }
+    try { await sendCommand(id, 'reset'); alert('✅ Команда отправлена — применится в течение пары секунд'); }
+    catch(e) { alert('Ошибка: ' + e.message); }
 }
 
 async function adminTargetZero() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
     if (!confirm('ОБНУЛИТЬ баланс ' + id + '?')) return;
-    try {
-        await set(ref(db, 'leaderboard/' + id + '/balance'), 0);
-        if (id === state.playerId) { state.balance = 0; save(); update(); }
-        alert('✅ Баланс обнулён');
-    } catch(e) { alert('Ошибка: ' + e.message); }
+    try { await sendCommand(id, 'zero'); alert('✅ Команда отправлена — применится в течение пары секунд'); }
+    catch(e) { alert('Ошибка: ' + e.message); }
 }
 
 async function adminTargetGrantTester() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
-    try {
-        await set(ref(db, 'leaderboard/' + id + '/isTester'), true);
-        alert('✅ TESTER выдан');
-    } catch(e) { alert('Ошибка: ' + e.message); }
+    try { await sendCommand(id, 'tester'); alert('✅ Команда отправлена'); }
+    catch(e) { alert('Ошибка: ' + e.message); }
 }
 
 async function adminTargetRevokePriv() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
     if (!confirm('Забрать ВСЕ привилегии у ' + id + '?')) return;
-    try {
-        await set(ref(db, 'leaderboard/' + id + '/isTester'), false);
-        await set(ref(db, 'leaderboard/' + id + '/isAdmin'), false);
-        await set(ref(db, 'leaderboard/' + id + '/isAdminPlus'), false);
-        alert('✅ Привилегии забраны');
-    } catch(e) { alert('Ошибка: ' + e.message); }
+    try { await sendCommand(id, 'revoke'); alert('✅ Команда отправлена'); }
+    catch(e) { alert('Ошибка: ' + e.message); }
 }
 
 async function adminTargetBan() {
@@ -1267,10 +968,8 @@ async function adminTargetBan() {
 async function adminTargetUnban() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
     const id = getTargetId(); if (!id) return;
-    try {
-        await remove(ref(db, 'bans/' + id));
-        alert('✅ Разбанен');
-    } catch(e) { alert('Ошибка: ' + e.message); }
+    try { await remove(ref(db, 'bans/' + id)); alert('✅ Разбанен'); }
+    catch(e) { alert('Ошибка: ' + e.message); }
 }
 
 function modalTargetId() { return state._modalTargetId; }
@@ -1294,13 +993,64 @@ async function checkBan() {
     return false;
 }
 
+// ============================================================
+// СЛУШАЕМ КОМАНДЫ АДМИНА
+// ============================================================
+function listenCommands() {
+    const myId = state.playerId;
+    if (!myId) return;
+    onValue(ref(db, 'commands/' + myId), async (snap) => {
+        if (!snap.exists()) return;
+        const cmd = snap.val();
+        if (!cmd || !cmd.action) return;
+
+        const cmdKey = 'last_cmd_' + myId;
+        if (localStorage.getItem(cmdKey) === String(cmd.ts)) return;
+        localStorage.setItem(cmdKey, String(cmd.ts));
+
+        try {
+            if (cmd.action === 'zero') {
+                state.balance = 0;
+                state.pending = null;
+                save();
+                await set(ref(db, 'leaderboard/' + myId + '/balance'), 0).catch(()=>{});
+                update();
+                showResult('Админ обнулил баланс', 'lose');
+            } else if (cmd.action === 'reset') {
+                state.balance = 1000;
+                state.pending = null;
+                save();
+                await set(ref(db, 'leaderboard/' + myId + '/balance'), 1000).catch(()=>{});
+                update();
+                showResult('Админ сбросил баланс', 'win');
+            } else if (cmd.action === 'tester') {
+                state.isTester = true;
+                save();
+                await set(ref(db, 'leaderboard/' + myId + '/isTester'), true).catch(()=>{});
+                update();
+                showResult('TESTER выдан', 'win');
+            } else if (cmd.action === 'revoke') {
+                state.isTester = false;
+                state.isAdmin = false;
+                ADMIN_OK = false;
+                save();
+                await set(ref(db, 'leaderboard/' + myId + '/isTester'), false).catch(()=>{});
+                await set(ref(db, 'leaderboard/' + myId + '/isAdminPlus'), false).catch(()=>{});
+                await set(ref(db, 'leaderboard/' + myId + '/isAdmin'), false).catch(()=>{});
+                update();
+                showResult('Привилегии забраны', 'lose');
+            }
+        } catch(e) {}
+
+        await remove(ref(db, 'commands/' + myId)).catch(()=>{});
+    });
+}
+
 function setArrowColor(color) {
     state.arrowColor = color;
     document.documentElement.style.setProperty('--arrow', color);
     $('customColor').value = color;
-    document.querySelectorAll('.color-dot').forEach(d => {
-        d.classList.toggle('active', d.dataset.color === color);
-    });
+    document.querySelectorAll('.color-dot').forEach(d => { d.classList.toggle('active', d.dataset.color === color); });
     save();
 }
 
@@ -1315,8 +1065,7 @@ $('fastToggle').addEventListener('click', () => {
     $('arrowRot').style.transition = state.fastSpin
         ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
         : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
-    Sound.resume(); Sound.click();
-    save();
+    Sound.resume(); Sound.click(); save();
 });
 
 $('soundToggle').addEventListener('click', () => {
@@ -1335,62 +1084,36 @@ function askReset() {
     $('confirmBtn').onclick = doReset;
     $('confirmOverlay').classList.add('active');
 }
-function cancelReset() {
-    $('confirmOverlay').classList.remove('active');
-    Sound.click();
-}
+function cancelReset() { $('confirmOverlay').classList.remove('active'); Sound.click(); }
 function doReset() {
-    state.balance = 1000;
-    state.pending = null;
-    bet = 100;
-    win = 125;
-    prizeSectorVisible = false;
+    state.balance = 1000; state.pending = null;
+    bet = 100; win = 125; prizeSectorVisible = false;
     save();
     $('confirmOverlay').classList.remove('active');
     update(); pushMyProfileToFirebase();
 }
 
-$('profileModal').addEventListener('click', (e) => {
-    if (e.target.id === 'profileModal') closeProfileModal();
-});
-$('confirmOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'confirmOverlay') cancelReset();
-});
+$('profileModal').addEventListener('click', (e) => { if (e.target.id === 'profileModal') closeProfileModal(); });
+$('confirmOverlay').addEventListener('click', (e) => { if (e.target.id === 'confirmOverlay') cancelReset(); });
 
 $('loginBtn').addEventListener('click', async () => {
-    try {
-        await signInWithPopup(auth, provider);
-    } catch(e) {
-        alert('Ошибка входа: ' + e.message);
-    }
+    try { await signInWithPopup(auth, provider); } catch(e) { alert('Ошибка входа: ' + e.message); }
 });
 
 $('logoutBtn').addEventListener('click', async () => {
-    try {
-        await signOut(auth);
-        location.reload();
-    } catch(e) {
-        alert('Ошибка выхода: ' + e.message);
-    }
+    try { await signOut(auth); location.reload(); } catch(e) { alert('Ошибка выхода: ' + e.message); }
 });
 
 onAuthStateChanged(auth, (user) => {
-    const loginBtn = $('loginBtn');
-    const logoutBtn = $('logoutBtn');
-    const emailSpan = $('userEmail');
-
+    const loginBtn = $('loginBtn'); const logoutBtn = $('logoutBtn'); const emailSpan = $('userEmail');
     if (user) {
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-block';
         emailSpan.style.display = 'inline-block';
         emailSpan.textContent = user.email || user.displayName || '';
-
         const oldId = state.playerId;
         state.playerId = user.uid;
-        if (oldId !== user.uid) {
-            save();
-            setTimeout(() => location.reload(), 500);
-        }
+        if (oldId !== user.uid) { save(); setTimeout(() => location.reload(), 500); }
     } else {
         loginBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'none';
@@ -1398,7 +1121,6 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Привязка функций к window для onclick
 window.applyMult = applyMult;
 window.applyPercent = applyPercent;
 window.saveNick = saveNick;
@@ -1424,66 +1146,51 @@ window.cancelReset = cancelReset;
 window.doReset = doReset;
 window.restartAfterCrash = restartAfterCrash;
 
-// ============================================================
-// СТАРТ — только после загрузки DOM
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     load();
-
     document.documentElement.style.setProperty('--arrow', state.arrowColor);
     $('customColor').value = state.arrowColor;
-    document.querySelectorAll('.color-dot').forEach(d => {
-        d.classList.toggle('active', d.dataset.color === state.arrowColor);
-    });
+    document.querySelectorAll('.color-dot').forEach(d => { d.classList.toggle('active', d.dataset.color === state.arrowColor); });
     $('fastToggle').classList.toggle('on', state.fastSpin);
-    if (state.fastSpin) {
-        $('arrowRot').style.transition = 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)';
-    }
+    if (state.fastSpin) $('arrowRot').style.transition = 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)';
     $('soundToggle').classList.toggle('on', state.soundOn !== false);
     Sound.setEnabled(state.soundOn !== false);
     $('nickInput').value = state.nickname;
 
     getOrCreatePlayerId();
+    await checkAdmin();
+    update();
 
-    checkAdmin().then(async () => {
-        update();
-        const banned = await checkBan();
-        if (banned) return;
+    const banned = await checkBan();
+    if (banned) return;
 
-        if (state.pending) {
-            const p = state.pending;
-            $('arrowRot').style.transition = 'none';
-            $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
-            rotation = p.rotation;
-            setTimeout(() => {
-                $('arrowRot').style.transition = state.fastSpin
-                    ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
-                    : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
-            }, 100);
-            state.pending = null;
-            save();
-            setTimeout(() => {
-                if (p.isWin) {
-                    if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
-                    else showResult('+' + p.payout.toFixed(2), 'win');
-                } else showResult('-' + p.bet.toFixed(2), 'lose');
-            }, 300);
-            if (state.balance < 1) {
-                if (state.balance < 0) state.balance = 0;
-                setTimeout(() => triggerCrash(p.bet), 600);
-            }
-        } else {
-            if (state.balance < 1) {
-                if (state.balance < 0) state.balance = 0;
-                save();
-                setTimeout(() => triggerCrash(0), 400);
-            }
-        }
+    listenCommands();
 
-        checkBalanceVersion();
-        loadHistoryFromFirebase();
-        pushMyProfileToFirebase();
-    });
+    if (state.pending) {
+        const p = state.pending;
+        $('arrowRot').style.transition = 'none';
+        $('arrowRot').style.transform = `rotate(${p.rotation}deg)`;
+        rotation = p.rotation;
+        setTimeout(() => {
+            $('arrowRot').style.transition = state.fastSpin
+                ? 'transform 3s cubic-bezier(0.15, 0.85, 0.25, 1)'
+                : 'transform 6s cubic-bezier(0.15, 0.85, 0.25, 1)';
+        }, 100);
+        state.pending = null; save();
+        setTimeout(() => {
+            if (p.isWin) {
+                if (p.isPrize) showResult('★ ПРИЗ +' + p.payout.toFixed(2) + ' ★', 'prize');
+                else showResult('+' + p.payout.toFixed(2), 'win');
+            } else showResult('-' + p.bet.toFixed(2), 'lose');
+        }, 300);
+        if (state.balance < 1) { if (state.balance < 0) state.balance = 0; setTimeout(() => triggerCrash(p.bet), 600); }
+    } else {
+        if (state.balance < 1) { if (state.balance < 0) state.balance = 0; save(); setTimeout(() => triggerCrash(0), 400); }
+    }
+
+    checkBalanceVersion();
+    loadHistoryFromFirebase();
+    pushMyProfileToFirebase();
 
     $('spinBtn').addEventListener('click', spin);
 });
@@ -1556,75 +1263,29 @@ document.addEventListener('DOMContentLoaded', () => {
     .game { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 1080px; margin: 0 auto; width: 100%; }
     .wheel-wrap { position: relative; width: 320px; height: 320px; flex-shrink: 0; margin-top: 10px; max-width: 100%; }
     .wheel-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-    .wheel-info {
-        position: absolute; inset: 0; display: flex; flex-direction: column;
-        align-items: center; justify-content: center; pointer-events: none;
-    }
-    .wheel-pct {
-        font-family: 'JetBrains Mono', monospace; font-size: 40px;
-        font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -1px;
-    }
+    .wheel-info { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .wheel-pct { font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -1px; }
     .wheel-state { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px; color: var(--muted); }
     .wheel-state.safe { color: var(--green); }
     .wheel-state.danger { color: var(--red-bright); }
-    .arrow-rot {
-        position: absolute; top: 50%; left: 50%;
-        width: 0; height: 0; transform-origin: 0 0;
-        transition: transform 6s cubic-bezier(0.15, 0.85, 0.25, 1);
-        z-index: 10; pointer-events: none;
-    }
-    .arrow {
-        position: absolute; left: -9px; bottom: 153px;
-        width: 0; height: 0;
-        border-left: 9px solid transparent;
-        border-right: 9px solid transparent;
-        border-top: 20px solid var(--arrow);
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
-    }
+    .arrow-rot { position: absolute; top: 50%; left: 50%; width: 0; height: 0; transform-origin: 0 0; transition: transform 6s cubic-bezier(0.15, 0.85, 0.25, 1); z-index: 10; pointer-events: none; }
+    .arrow { position: absolute; left: -9px; bottom: 153px; width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 20px solid var(--arrow); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
     .panel { display: grid; grid-template-columns: 1.3fr 1.5fr 1fr; gap: 6px; width: 100%; height: 68px; }
-    .bet-panel {
-        background: var(--bg2); border: 1px solid var(--line);
-        padding: 10px 12px; display: flex; flex-direction: column;
-        justify-content: center; gap: 8px; min-width: 0;
-    }
-    .bet-top {
-        display: flex; justify-content: space-between; align-items: baseline;
-        font-size: 10px; font-weight: 600; text-transform: uppercase;
-        letter-spacing: 1px; color: var(--muted); gap: 6px;
-    }
+    .bet-panel { background: var(--bg2); border: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; }
+    .bet-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); gap: 6px; }
     .bet-val { display: flex; align-items: baseline; gap: 4px; font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: 12px; }
     .bet-val .max { color: var(--dim); font-size: 10px; }
     .slider { position: relative; width: 100%; height: 24px; cursor: grab; display: flex; align-items: center; touch-action: none; }
     .slider:active { cursor: grabbing; }
-    .slider::before {
-        content: ''; position: absolute; left: 0; right: 0; top: 50%;
-        height: 3px; transform: translateY(-50%); background: var(--line2);
-    }
-    .slider-fill {
-        position: absolute; left: 0; top: 50%; height: 3px;
-        transform: translateY(-50%); background: var(--red); width: 0%; pointer-events: none;
-    }
-    .slider-knob {
-        position: absolute; top: 50%; width: 16px; height: 16px;
-        background: var(--text); border-radius: 50%; transform: translate(-50%, -50%); left: 0%;
-        pointer-events: none; transition: background 0.15s;
-        box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
-    }
+    .slider::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 3px; transform: translateY(-50%); background: var(--line2); }
+    .slider-fill { position: absolute; left: 0; top: 50%; height: 3px; transform: translateY(-50%); background: var(--red); width: 0%; pointer-events: none; }
+    .slider-knob { position: absolute; top: 50%; width: 16px; height: 16px; background: var(--text); border-radius: 50%; transform: translate(-50%, -50%); left: 0%; pointer-events: none; transition: background 0.15s; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
     .slider:hover .slider-knob { background: var(--red-bright); }
-    .upgrade {
-        background: #1a0f0d; border: 1px solid #3a1a15; color: #6a3028;
-        font-family: inherit; font-size: 16px; font-weight: 900;
-        letter-spacing: 2px; text-transform: uppercase;
-        cursor: pointer; transition: all 0.15s; height: 100%; padding: 0 8px;
-    }
+    .upgrade { background: #1a0f0d; border: 1px solid #3a1a15; color: #6a3028; font-family: inherit; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; height: 100%; padding: 0 8px; }
     .upgrade:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red-bright); }
     .upgrade:disabled { opacity: 0.35; cursor: not-allowed; }
     .mult-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; height: 100%; }
-    .mult {
-        background: var(--bg2); border: 1px solid var(--line); color: var(--muted);
-        font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-        cursor: pointer; transition: all 0.15s; padding: 0; height: 100%;
-    }
+    .mult { background: var(--bg2); border: 1px solid var(--line); color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; padding: 0; height: 100%; }
     .mult:hover { background: var(--line); color: var(--text); border-color: var(--line2); }
     .mult.p35 { border-color: #4a2420; color: #a04a3a; }
     .mult.p35:hover { background: #1a0f0d; color: var(--red-bright); border-color: var(--red); }
@@ -1632,68 +1293,28 @@ document.addEventListener('DOMContentLoaded', () => {
     .mult.p55:hover { background: #1a1408; color: var(--gold); border-color: var(--gold); }
     .mult.p75 { border-color: #2a3a15; color: #7a9a3a; }
     .mult.p75:hover { background: #0f1408; color: var(--green); border-color: var(--green); }
-    .win-input-row {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 10px 12px; background: var(--bg2); border: 1px solid var(--line);
-    }
-    .win-input-row label {
-        font-size: 11px; color: var(--muted); text-transform: uppercase;
-        letter-spacing: 1.2px; font-weight: 600; flex-shrink: 0;
-    }
-    .win-input-row input {
-        flex: 1; min-width: 0;
-        background: var(--bg); border: 1px solid var(--line);
-        padding: 8px 12px; color: var(--text);
-        font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
-        outline: none; text-align: right; user-select: text;
-    }
+    .win-input-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; background: var(--bg2); border: 1px solid var(--line); }
+    .win-input-row label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; flex-shrink: 0; }
+    .win-input-row input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); padding: 8px 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; outline: none; text-align: right; user-select: text; }
     .win-input-row input:focus { border-color: var(--red); }
-    .win-input-row .hint {
-        font-family: 'JetBrains Mono', monospace; font-size: 11px;
-        color: var(--dim); flex-shrink: 0; min-width: 60px; text-align: right;
-    }
-    .stats {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-        width: 100%; padding: 10px 14px; background: var(--bg2);
-        border: 1px solid var(--line); font-size: 11px; color: var(--muted);
-        min-height: 44px; align-items: center;
-    }
+    .win-input-row .hint { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; min-width: 60px; text-align: right; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--line); font-size: 11px; color: var(--muted); min-height: 44px; align-items: center; }
     .stats .item { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
     .stats .item span { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 700; }
-    .stats .result {
-        grid-column: 1 / -1; text-align: center; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; min-height: 16px;
-    }
+    .stats .result { grid-column: 1 / -1; text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; min-height: 16px; }
     .stats .result.win { color: var(--green); }
     .stats .result.lose { color: var(--red-bright); }
     .stats .result.prize { color: var(--gold); text-shadow: 0 0 10px rgba(201,148,44,0.6); }
     .cards { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; width: 100%; }
     .card { background: var(--bg2); border: 1px solid var(--line); padding: 16px; }
-    .card h3 {
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 2px; color: var(--red); margin-bottom: 14px;
-    }
+    .card h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--red); margin-bottom: 14px; }
     .card.admin-plus h3 { color: var(--admin-plus); text-shadow: 0 0 10px rgba(229,160,32,0.5); }
     .field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .field:last-child { margin-bottom: 0; }
-    .field label {
-        font-size: 11px; color: var(--muted); text-transform: uppercase;
-        letter-spacing: 1px; min-width: 110px; flex-shrink: 0;
-    }
-    .field input[type="text"] {
-        flex: 1; min-width: 120px;
-        background: var(--bg); border: 1px solid var(--line);
-        padding: 9px 12px; color: var(--text);
-        font-family: 'JetBrains Mono', monospace; font-size: 13px;
-        outline: none; user-select: text;
-    }
+    .field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; min-width: 110px; flex-shrink: 0; }
+    .field input[type="text"] { flex: 1; min-width: 120px; background: var(--bg); border: 1px solid var(--line); padding: 9px 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; user-select: text; }
     .field input[type="text"]:focus { border-color: var(--red); }
-    .btn {
-        background: var(--red); border: none; padding: 9px 18px; color: #fff;
-        font-family: inherit; font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.5px;
-        cursor: pointer; transition: background 0.15s;
-    }
+    .btn { background: var(--red); border: none; padding: 9px 18px; color: #fff; font-family: inherit; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: background 0.15s; }
     .btn:hover { background: var(--red-bright); }
     .btn.green { background: var(--green); }
     .btn.green:hover { background: #85c035; }
@@ -1714,33 +1335,16 @@ document.addEventListener('DOMContentLoaded', () => {
     .color-dot.active { border-color: var(--text); border-width: 2px; }
     .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; gap: 12px; }
     .toggle-row span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; flex: 1; }
-    .toggle {
-        width: 44px; height: 24px; background: var(--line); border: 1px solid var(--line2);
-        position: relative; cursor: pointer; flex-shrink: 0;
-    }
-    .toggle::after {
-        content: ''; position: absolute; top: 2px; left: 2px;
-        width: 18px; height: 18px; background: var(--muted);
-        transition: transform 0.15s, background 0.15s;
-    }
+    .toggle { width: 44px; height: 24px; background: var(--line); border: 1px solid var(--line2); position: relative; cursor: pointer; flex-shrink: 0; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--muted); transition: transform 0.15s, background 0.15s; }
     .toggle.on { background: #2a1a15; border-color: var(--red); }
     .toggle.on::after { transform: translateX(18px); background: var(--red); }
     .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
     .toggle.on.gold::after { background: var(--gold); }
     .lb-wrap { max-width: 720px; margin: 0 auto; width: 100%; }
-    .lb-header {
-        display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
-        padding: 10px 12px; background: var(--bg2); border: 1px solid var(--line);
-        font-size: 10px; color: var(--muted); text-transform: uppercase;
-        letter-spacing: 1.5px; font-weight: 600; margin-bottom: 6px;
-    }
+    .lb-header { display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px; padding: 10px 12px; background: var(--bg2); border: 1px solid var(--line); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 6px; }
     .lb-header > div:nth-child(3) { text-align: right; }
-    .lb-row {
-        display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
-        padding: 12px; background: var(--bg2); border: 1px solid var(--line);
-        margin-bottom: 5px; align-items: center; min-width: 0;
-        cursor: pointer; transition: border-color 0.15s, background 0.15s;
-    }
+    .lb-row { display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px; padding: 12px; background: var(--bg2); border: 1px solid var(--line); margin-bottom: 5px; align-items: center; min-width: 0; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .lb-row:hover { border-color: var(--line2); background: #16161c; }
     .lb-row.me { border-color: var(--admin-plus); background: rgba(229,160,32,0.06); }
     .lb-rank { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: var(--muted); }
@@ -1749,39 +1353,19 @@ document.addEventListener('DOMContentLoaded', () => {
     .lb-rank.top3 { color: #c08a4a; }
     .lb-name { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text); min-width: 0; }
     .lb-name .lb-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lb-avatar {
-        width: 24px; height: 24px; border-radius: 3px;
-        background: var(--line2); flex-shrink: 0; overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 11px; font-weight: 700; color: var(--text);
-    }
+    .lb-avatar { width: 24px; height: 24px; border-radius: 3px; background: var(--line2); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text); }
     .lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .lb-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--green); text-align: right; }
     .lb-empty { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; background: var(--bg2); border: 1px solid var(--line); }
     .avatar-upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .avatar-preview {
-        width: 80px; height: 80px; border-radius: 6px;
-        background: var(--line2); flex-shrink: 0; overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 32px; font-weight: 700; color: var(--text);
-        border: 1px solid var(--line);
-    }
+    .avatar-preview { width: 80px; height: 80px; border-radius: 6px; background: var(--line2); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: var(--text); border: 1px solid var(--line); }
     .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .file-label {
-        display: inline-block; padding: 9px 18px;
-        background: var(--green); color: #fff; cursor: pointer;
-        font-family: inherit; font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.5px;
-    }
+    .file-label { display: inline-block; padding: 9px 18px; background: var(--green); color: #fff; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
     .file-label:hover { background: #85c035; }
     .file-input { display: none; }
     .avatar-hint { font-size: 10px; color: var(--dim); width: 100%; }
     .history-list { display: flex; flex-direction: column; gap: 5px; max-height: 400px; overflow-y: auto; }
-    .hist-row {
-        display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px;
-        padding: 8px 10px; background: var(--bg);
-        border: 1px solid var(--line); align-items: center; font-size: 11px;
-    }
+    .hist-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); align-items: center; font-size: 11px; }
     .hist-row.win { border-left: 3px solid var(--win); }
     .hist-row.lose { border-left: 3px solid var(--lose); }
     .hist-row.prize { border-left: 3px solid var(--prize); }
@@ -1803,60 +1387,27 @@ document.addEventListener('DOMContentLoaded', () => {
     .pf-value.win { color: var(--green); }
     .pf-value.lose { color: var(--red-bright); }
     .pf-hash { color: #7a7a8a; font-size: 9px; }
-    .modal-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-        display: none; align-items: center; justify-content: center;
-        z-index: 9999; backdrop-filter: blur(6px); padding: 16px; overflow-y: auto;
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(6px); padding: 16px; overflow-y: auto; }
     .modal-overlay.active { display: flex; }
-    .modal-box {
-        background: var(--bg2); border: 1px solid var(--line2);
-        padding: 20px; max-width: 540px; width: 100%;
-        max-height: 90vh; overflow-y: auto; position: relative;
-    }
-    .modal-close {
-        position: absolute; top: 12px; right: 12px;
-        background: transparent; border: none; color: var(--muted);
-        font-size: 20px; cursor: pointer; padding: 4px 10px;
-    }
+    .modal-box { background: var(--bg2); border: 1px solid var(--line2); padding: 20px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal-close { position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 10px; }
     .modal-close:hover { color: var(--text); }
-    .modal-header {
-        display: flex; align-items: center; gap: 14px;
-        margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
-    }
-    .modal-avatar {
-        width: 60px; height: 60px; border-radius: 6px;
-        background: var(--line2); flex-shrink: 0; overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 26px; font-weight: 700; border: 1px solid var(--line);
-    }
+    .modal-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .modal-avatar { width: 60px; height: 60px; border-radius: 6px; background: var(--line2); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; border: 1px solid var(--line); }
     .modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .modal-name-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .modal-name { font-size: 18px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .modal-tags { display: flex; gap: 6px; flex-wrap: wrap; }
     .modal-balance { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--green); margin-top: 4px; }
     .modal-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--red); margin: 14px 0 8px; }
-    .confirm-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-        display: none; align-items: center; justify-content: center;
-        z-index: 99998; backdrop-filter: blur(6px); padding: 16px;
-    }
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 99998; backdrop-filter: blur(6px); padding: 16px; }
     .confirm-overlay.active { display: flex; }
-    .confirm-box {
-        background: var(--bg2); border: 2px solid var(--red);
-        padding: 24px 20px; max-width: 480px; width: 100%; text-align: center;
-        box-shadow: 0 0 60px rgba(194,58,43,0.5);
-    }
+    .confirm-box { background: var(--bg2); border: 2px solid var(--red); padding: 24px 20px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(194,58,43,0.5); }
     .confirm-title { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: var(--red-bright); margin-bottom: 12px; }
     .confirm-text { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
     .confirm-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .confirm-buttons .btn { padding: 11px 22px; min-width: 110px; }
-    .crash-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-        display: none; align-items: center; justify-content: center;
-        z-index: 99999; backdrop-filter: blur(8px); flex-direction: column;
-        padding: 20px; text-align: center;
-    }
+    .crash-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 99999; backdrop-filter: blur(8px); flex-direction: column; padding: 20px; text-align: center; }
     .crash-overlay.active { display: flex; }
     .crash-text { font-size: 72px; font-weight: 900; color: var(--red-bright); letter-spacing: -2px; text-transform: uppercase; text-shadow: 0 0 40px rgba(229,74,53,0.8); }
     .crash-sub { margin-top: 12px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 4px; }
@@ -1922,20 +1473,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="wheel-wrap">
             <svg class="wheel-svg" viewBox="0 0 360 360">
                 <defs>
-                    <linearGradient id="ringGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#26262e"/>
-                        <stop offset="100%" stop-color="#14141a"/>
-                    </linearGradient>
-                    <linearGradient id="winGrad" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stop-color="#c23a2b"/>
-                        <stop offset="50%" stop-color="#d4782c"/>
-                        <stop offset="100%" stop-color="#c9942c"/>
-                    </linearGradient>
-                    <linearGradient id="prizeGrad" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stop-color="#ffd94a"/>
-                        <stop offset="50%" stop-color="#f5a623"/>
-                        <stop offset="100%" stop-color="#ffeb7a"/>
-                    </linearGradient>
+                    <linearGradient id="ringGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#26262e"/><stop offset="100%" stop-color="#14141a"/></linearGradient>
+                    <linearGradient id="winGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#c23a2b"/><stop offset="50%" stop-color="#d4782c"/><stop offset="100%" stop-color="#c9942c"/></linearGradient>
+                    <linearGradient id="prizeGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ffd94a"/><stop offset="50%" stop-color="#f5a623"/><stop offset="100%" stop-color="#ffeb7a"/></linearGradient>
                 </defs>
                 <circle cx="180" cy="180" r="165" fill="none" stroke="url(#ringGrad)" stroke-width="28"/>
                 <path id="winArc" fill="none" stroke="url(#winGrad)" stroke-width="28"/>
@@ -1952,17 +1492,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <div class="panel">
             <div class="bet-panel">
-                <div class="bet-top">
-                    <span>Ставка</span>
-                    <span class="bet-val">
-                        <span id="betVal">100.00</span>
-                        <span class="max" id="betMax">(макс 1000.00)</span>
-                    </span>
-                </div>
-                <div class="slider" id="slider">
-                    <div class="slider-fill" id="sliderFill"></div>
-                    <div class="slider-knob" id="sliderKnob"></div>
-                </div>
+                <div class="bet-top"><span>Ставка</span><span class="bet-val"><span id="betVal">100.00</span><span class="max" id="betMax">(макс 1000.00)</span></span></div>
+                <div class="slider" id="slider"><div class="slider-fill" id="sliderFill"></div><div class="slider-knob" id="sliderKnob"></div></div>
             </div>
             <button class="upgrade" id="spinBtn">Апгрейд</button>
             <div class="mult-panel">
@@ -2034,20 +1565,14 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="card">
             <h3>Мои последние апгрейды</h3>
-            <div class="history-list" id="myHistory">
-                <div class="hist-empty">Пока нет ставок</div>
-            </div>
+            <div class="history-list" id="myHistory"><div class="hist-empty">Пока нет ставок</div></div>
         </div>
     </div>
 </div>
 
 <div class="screen" id="screen-leaders">
     <div class="lb-wrap">
-        <div class="lb-header">
-            <div>#</div>
-            <div>Игрок</div>
-            <div>Баланс</div>
-        </div>
+        <div class="lb-header"><div>#</div><div>Игрок</div><div>Баланс</div></div>
         <div id="leaderboardList"></div>
     </div>
 </div>
@@ -2087,39 +1612,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <div class="card">
             <h3>Прокрутка</h3>
-            <div class="toggle-row">
-                <span>Быстрая прокрутка</span>
-                <div class="toggle" id="fastToggle"></div>
-            </div>
+            <div class="toggle-row"><span>Быстрая прокрутка</span><div class="toggle" id="fastToggle"></div></div>
         </div>
 
         <div class="card">
             <h3>Звук</h3>
-            <div class="toggle-row">
-                <span>Звуковые эффекты</span>
-                <div class="toggle on" id="soundToggle"></div>
-            </div>
+            <div class="toggle-row"><span>Звуковые эффекты</span><div class="toggle on" id="soundToggle"></div></div>
         </div>
 
         <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
             <h3>★ ADMIN ПАНЕЛЬ ★</h3>
-
-            <div class="toggle-row">
-                <span>Вечный заход</span>
-                <div class="toggle gold" id="alwaysWinToggle"></div>
-            </div>
-            <div class="toggle-row">
-                <span>Вечный приз</span>
-                <div class="toggle gold" id="alwaysPrizeToggle"></div>
-            </div>
-            <div class="toggle-row">
-                <span>Вечный кэшбек</span>
-                <div class="toggle gold" id="alwaysCashbackToggle"></div>
-            </div>
-            <div class="toggle-row">
-                <span>Невидимка (не в лидерборде)</span>
-                <div class="toggle gold" id="invisibleToggle"></div>
-            </div>
+            <div class="toggle-row"><span>Вечный заход</span><div class="toggle gold" id="alwaysWinToggle"></div></div>
+            <div class="toggle-row"><span>Вечный приз</span><div class="toggle gold" id="alwaysPrizeToggle"></div></div>
+            <div class="toggle-row"><span>Вечный кэшбек</span><div class="toggle gold" id="alwaysCashbackToggle"></div></div>
+            <div class="toggle-row"><span>Невидимка (не в лидерборде)</span><div class="toggle gold" id="invisibleToggle"></div></div>
 
             <div class="field" style="margin-top:12px;">
                 <label>Изменить свой баланс</label>
@@ -2152,14 +1658,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
                     <button class="btn danger" style="flex:1;" onclick="adminFullWipe()">🔄 ПОЛНЫЙ СБРОС ВСЕХ</button>
                 </div>
+                <div class="avatar-hint" style="margin-top:10px;">Команды применяются в течение 1–2 сек, когда игрок онлайн. Если офлайн — применится при следующем заходе.</div>
             </div>
         </div>
 
         <div class="card">
             <h3 style="color:#b02222;">Сброс баланса</h3>
-            <button class="btn danger" style="width:100%;" onclick="askReset()">
-                Сбросить баланс до 1000
-            </button>
+            <button class="btn danger" style="width:100%;" onclick="askReset()">Сбросить баланс до 1000</button>
         </div>
     </div>
 </div>
@@ -2176,16 +1681,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
         <div class="modal-section-title">Последние апгрейды</div>
-        <div class="history-list" id="modalHistory">
-            <div class="hist-empty">Пока нет ставок</div>
-        </div>
+        <div class="history-list" id="modalHistory"><div class="hist-empty">Пока нет ставок</div></div>
 
         <div id="modalAdminBlock" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
             <div class="modal-section-title" style="color:#e5a020;">ADMIN: управление игроком</div>
-            <div class="pf-row">
-                <div class="pf-label">Player ID</div>
-                <div class="pf-value" id="modalPlayerId" style="user-select:text; cursor:text;">—</div>
-            </div>
+            <div class="pf-row"><div class="pf-label">Player ID</div><div class="pf-value" id="modalPlayerId" style="user-select:text; cursor:text;">—</div></div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
                 <button class="btn gold" onclick="modalTargetReset()">Сброс 1000</button>
                 <button class="btn danger" onclick="modalTargetZero()">Обнулить</button>
@@ -2202,10 +1702,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
         <div class="confirm-title" id="confirmTitle">Уверен?</div>
-        <div class="confirm-text" id="confirmText">
-            Баланс сбросится до 1000.<br>
-            Ник, статус и промокоды сохранятся.
-        </div>
+        <div class="confirm-text" id="confirmText">Баланс сбросится до 1000.<br>Ник, статус и промокоды сохранятся.</div>
         <div class="confirm-buttons">
             <button class="btn" onclick="cancelReset()">Отмена</button>
             <button class="btn danger" id="confirmBtn" onclick="doReset()">Да, сбросить</button>
@@ -2216,10 +1713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="crash-overlay" id="crashOverlay">
     <div class="crash-text">КРАХ</div>
     <div class="crash-sub">Баланс обнулён</div>
-    <div class="crash-info">
-        Ставка: <b id="crashBet">0</b><br>
-        Итог: <b id="crashResult">0</b>
-    </div>
+    <div class="crash-info">Ставка: <b id="crashBet">0</b><br>Итог: <b id="crashResult">0</b></div>
     <button class="crash-restart" onclick="restartAfterCrash()">Начать заново</button>
 </div>
 </body>
