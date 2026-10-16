@@ -7,7 +7,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAkFgX0Q2SiPCoik633Jhfbx3m-ujW9Pzc",
@@ -21,7 +21,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  window.FB = { db, ref, set, get, onValue };
+  window.FB = { db, ref, set, get, remove, onValue };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -33,7 +33,7 @@
         --text: #e8e8ec; --muted: #6b6b78; --dim: #3a3a44;
         --red: #c23a2b; --red-bright: #e54a35; --gold: #c9942c;
         --green: #6fa32c; --arrow: #c23a2b;
-        --tester: #22b8a0; --admin-plus: #e5a020;
+        --tester: #22b8a0; --admin-plus: #e5a020; --admin: #e5484d;
     }
     html, body {
         background: var(--bg); color: var(--text); min-height: 100vh;
@@ -41,37 +41,34 @@
         user-select: none; -webkit-font-smoothing: antialiased;
         -webkit-tap-highlight-color: transparent;
     }
-    body {
-        padding: 12px;
-        display: flex; flex-direction: column; align-items: center;
-        overflow-x: hidden;
-        min-width: 0;
-    }
+    body { padding: 12px; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
 
     .header {
         width: 100%; max-width: 1080px;
         display: grid; grid-template-columns: 1fr auto 1fr;
         align-items: center; padding: 10px 14px;
         background: var(--bg2); border: 1px solid var(--line);
-        margin-bottom: 16px;
-        gap: 8px;
+        margin-bottom: 16px; gap: 8px;
     }
     .user-block { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
     .avatar {
         width: 32px; height: 32px; background: var(--red);
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;
+        overflow: hidden; border-radius: 4px;
     }
-    .avatar.tester { background: linear-gradient(135deg, #22b8a0, #128070); box-shadow: 0 0 12px rgba(34,184,160,0.6); }
-    .avatar.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); box-shadow: 0 0 12px rgba(229,160,32,0.6); }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar.tester { background: linear-gradient(135deg, #22b8a0, #128070); }
+    .avatar.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); }
+    .avatar.admin { background: linear-gradient(135deg, #e5484d, #8a1a1a); box-shadow: 0 0 12px rgba(229,72,77,0.7); }
     .nick-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
     .admin-tag {
         background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
-        padding: 2px 5px; text-transform: uppercase; letter-spacing: 0.8px;
-        flex-shrink: 0;
+        padding: 2px 5px; text-transform: uppercase; letter-spacing: 0.8px; flex-shrink: 0;
     }
-    .admin-tag.tester { background: linear-gradient(135deg, #22b8a0, #128070); box-shadow: 0 0 8px rgba(34,184,160,0.6); }
-    .admin-tag.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); box-shadow: 0 0 8px rgba(229,160,32,0.6); }
+    .admin-tag.tester { background: linear-gradient(135deg, #22b8a0, #128070); }
+    .admin-tag.admin-plus { background: linear-gradient(135deg, #e5a020, #c23a2b); }
+    .admin-tag.admin { background: linear-gradient(135deg, #e5484d, #8a1a1a); box-shadow: 0 0 8px rgba(229,72,77,0.7); }
     .nick { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tabs { display: flex; gap: 0; background: var(--bg); border: 1px solid var(--line); }
     .tabs button {
@@ -79,8 +76,7 @@
         color: var(--muted); font-size: 11px; font-weight: 600;
         font-family: inherit; text-transform: uppercase; letter-spacing: 1px;
         cursor: pointer; transition: color 0.15s, background 0.15s;
-        border-right: 1px solid var(--line);
-        white-space: nowrap;
+        border-right: 1px solid var(--line); white-space: nowrap;
     }
     .tabs button:last-child { border-right: none; }
     .tabs button:hover { color: var(--text); }
@@ -108,10 +104,7 @@
         font-family: 'JetBrains Mono', monospace; font-size: 40px;
         font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -1px;
     }
-    .wheel-state {
-        font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 3px; margin-top: 8px; color: var(--muted);
-    }
+    .wheel-state { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px; color: var(--muted); }
     .wheel-state.safe { color: var(--green); }
     .wheel-state.danger { color: var(--red-bright); }
     .arrow-rot {
@@ -133,14 +126,12 @@
     .bet-panel {
         background: var(--bg2); border: 1px solid var(--line);
         padding: 10px 12px; display: flex; flex-direction: column;
-        justify-content: center; gap: 8px;
-        min-width: 0;
+        justify-content: center; gap: 8px; min-width: 0;
     }
     .bet-top {
         display: flex; justify-content: space-between; align-items: baseline;
         font-size: 10px; font-weight: 600; text-transform: uppercase;
-        letter-spacing: 1px; color: var(--muted);
-        gap: 6px;
+        letter-spacing: 1px; color: var(--muted); gap: 6px;
     }
     .bet-val { display: flex; align-items: baseline; gap: 4px; font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: 12px; }
     .bet-val .max { color: var(--dim); font-size: 10px; }
@@ -167,8 +158,7 @@
         background: #1a0f0d; border: 1px solid #3a1a15; color: #6a3028;
         font-family: inherit; font-size: 16px; font-weight: 900;
         letter-spacing: 2px; text-transform: uppercase;
-        cursor: pointer; transition: all 0.15s; height: 100%;
-        padding: 0 8px;
+        cursor: pointer; transition: all 0.15s; height: 100%; padding: 0 8px;
     }
     .upgrade:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red-bright); }
     .upgrade:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -218,8 +208,7 @@
     .stats .item span { font-family: 'JetBrains Mono', monospace; color: var(--text); font-weight: 700; }
     .stats .result {
         grid-column: 1 / -1; text-align: center; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px;
-        min-height: 16px;
+        text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px; min-height: 16px;
     }
     .stats .result.win { color: var(--green); }
     .stats .result.lose { color: var(--red-bright); }
@@ -232,6 +221,7 @@
         letter-spacing: 2px; color: var(--red); margin-bottom: 14px;
     }
     .card.admin-plus h3 { color: var(--admin-plus); text-shadow: 0 0 10px rgba(229,160,32,0.5); }
+    .card.admin h3 { color: var(--admin); text-shadow: 0 0 10px rgba(229,72,77,0.5); }
     .field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .field:last-child { margin-bottom: 0; }
     .field label {
@@ -258,6 +248,8 @@
     .btn.green:hover { background: #85c035; }
     .btn.gold { background: linear-gradient(135deg, #e5a020, #c23a2b); }
     .btn.gold:hover { background: linear-gradient(135deg, #f5b030, #d44a3b); }
+    .btn.admin { background: linear-gradient(135deg, #e5484d, #8a1a1a); }
+    .btn.admin:hover { background: linear-gradient(135deg, #f5585d, #b02a2a); }
     .btn.danger { background: #8a1a1a; }
     .btn.danger:hover { background: #b02222; }
 
@@ -268,6 +260,7 @@
     .promo-msg.err { color: var(--red-bright); }
     .promo-msg.gold { color: var(--gold); }
     .promo-msg.tester { color: var(--tester); }
+    .promo-msg.admin { color: var(--admin); }
 
     .color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .color-dot { width: 32px; height: 32px; border: 1px solid var(--line2); cursor: pointer; padding: 0; }
@@ -289,6 +282,8 @@
     .toggle.on::after { transform: translateX(18px); background: var(--red); }
     .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
     .toggle.on.gold::after { background: var(--gold); }
+    .toggle.on.admin { background: #2a0a0a; border-color: var(--admin); }
+    .toggle.on.admin::after { background: var(--admin); }
 
     .lb-wrap { max-width: 720px; margin: 0 auto; width: 100%; }
     .lb-header {
@@ -301,8 +296,7 @@
     .lb-row {
         display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
         padding: 12px; background: var(--bg2); border: 1px solid var(--line);
-        margin-bottom: 5px; align-items: center;
-        min-width: 0;
+        margin-bottom: 5px; align-items: center; min-width: 0;
     }
     .lb-row.me { border-color: var(--tester); background: rgba(34,184,160,0.06); }
     .lb-rank { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: var(--muted); }
@@ -311,14 +305,29 @@
     .lb-rank.top3 { color: #c08a4a; }
     .lb-name { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text); min-width: 0; }
     .lb-name .lb-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-avatar {
+        width: 24px; height: 24px; border-radius: 3px;
+        background: var(--line2); flex-shrink: 0; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; color: var(--text);
+    }
+    .lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .lb-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--green); text-align: right; }
     .lb-empty { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; background: var(--bg2); border: 1px solid var(--line); }
+
+    .avatar-preview {
+        width: 80px; height: 80px; border-radius: 6px;
+        background: var(--line2); flex-shrink: 0; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 32px; font-weight: 700; color: var(--text);
+        border: 1px solid var(--line);
+    }
+    .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
 
     .confirm-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.9);
         display: none; align-items: center; justify-content: center;
-        z-index: 99998; backdrop-filter: blur(6px);
-        padding: 16px;
+        z-index: 99998; backdrop-filter: blur(6px); padding: 16px;
     }
     .confirm-overlay.active { display: flex; }
     .confirm-box {
@@ -488,10 +497,17 @@
         <div class="card">
             <h3>Профиль</h3>
             <div class="field">
+                <label>Аватар</label>
+                <div class="avatar-preview" id="avatarPreview">?</div>
+                <input type="text" id="avatarUrlInput" placeholder="URL картинки (https://...)" style="flex:1; min-width: 160px;">
+                <button class="btn green" onclick="saveAvatar()">Сохранить</button>
+                <button class="btn danger" onclick="resetAvatar()">Убрать</button>
+            </div>
+            <div class="field">
                 <label>Никнейм</label>
                 <input type="text" id="nickInput" placeholder="Введи ник" maxlength="20">
+                <button class="btn green" onclick="saveNick()">Сохранить</button>
             </div>
-            <button class="btn green" onclick="saveNick()">Сохранить</button>
         </div>
         <div class="card">
             <h3>Промокод</h3>
@@ -574,6 +590,14 @@
             </div>
         </div>
 
+        <div class="card admin" id="adminPanel" style="display:none;">
+            <h3>★ ADMIN ПАНЕЛЬ ★</h3>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn admin" onclick="adminWipeAllBalances()">Обнулить все балансы</button>
+                <button class="btn admin" onclick="adminWipeLeaderboard()">Очистить лидерборд</button>
+            </div>
+        </div>
+
         <div class="card">
             <h3 style="color:#b02222;">Сброс баланса</h3>
             <button class="btn danger" style="width:100%;" onclick="askReset()">
@@ -585,14 +609,14 @@
 
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
-        <div class="confirm-title">Уверен?</div>
-        <div class="confirm-text">
+        <div class="confirm-title" id="confirmTitle">Уверен?</div>
+        <div class="confirm-text" id="confirmText">
             Баланс сбросится до 1000.<br>
             Ник, статус и промокоды сохранятся.
         </div>
         <div class="confirm-buttons">
             <button class="btn" onclick="cancelReset()">Отмена</button>
-            <button class="btn danger" onclick="doReset()">Да, сбросить</button>
+            <button class="btn danger" id="confirmBtn" onclick="doReset()">Да, сбросить</button>
         </div>
     </div>
 </div>
@@ -822,12 +846,6 @@ const PROMOS = {
         msg: 'Активировано. +10000, статус TESTER',
         msgType: 'tester',
     },
-    'Pupsik_2288': {
-        balance: 0,
-        adminPlus: true,
-        msg: '★ ADMIN+ активирован',
-        msgType: 'gold',
-    },
     'oleza67': {
         balance: 5000,
         msg: 'Активировано. +5000',
@@ -843,12 +861,57 @@ let spinning = false;
 let rotation = 0;
 let prizeSectorVisible = false;
 
+// ⚠️ ТОЛЬКО МОЙ ID — ADMIN работает только для него
+const MASTER_ID = 'p_1792080236317_7dnctppo';
+const MAX_BALANCE = 9999999999;
+const MIN_CHANCE = 0.1; // 0.1% минимальный шанс
+
+// Список запрещённых слов (мат)
+const BAD_WORDS = [
+    'xyu', 'xy', 'xep', 'xer', 'xуй', 'хуй', 'хуя', 'хуе', 'хуё', 'хye',
+    'пизд', 'пиздa', 'пиздец', 'пизж', 'пзд', 'пиздюк',
+    'бля', 'блядь', 'блят', 'блядство',
+    'еба', 'ебa', 'ебaть', 'ебaл', 'ебaло', 'ебло', 'еби', 'ебуч',
+    'ебу', 'ебет', 'ебёт', 'ебля', 'ёбa', 'ёбaный',
+    'сука', 'суки', 'сукa', 'сучка', 'сучки',
+    'гандон', 'гaндон', 'гондон', 'гандон',
+    'мразь', 'мрaзь',
+    'пидор', 'пидaр', 'пидар', 'пидoр', 'пидорас', 'пидорасы',
+    'шлюха', 'шлюхa', 'шлюхи',
+    'долбоеб', 'долбaеб', 'долбоёб',
+    'уеб', 'уебaн', 'уёб', 'уeб',
+    'ахуе', 'ахуe', 'охуе', 'охуен', 'охуи',
+    'нaxyй', 'нахуй', 'нахye', 'нахер',
+    'fuck', 'fck', 'fuk', 'shit', 'bitch', 'ass', 'dick', 'cunt', 'pussy',
+    'whore', 'slut', 'nigger', 'niga', 'faggot', 'retard',
+    'мaндa', 'манда', 'мaнда', 'письк', 'писькa',
+    'жопa', 'жопа', 'жопy',
+    'гoвнo', 'говно', 'гoвнa', 'говнa',
+    'мудaк', 'мудак', 'мудak', 'мудил',
+    'козел', 'кoзел', 'козёл',
+    'сволоч', 'свoлоч',
+    'дебил', 'дeбил', 'дeбиль',
+    'идиот', 'идиoт', 'идuот',
+];
+
+function containsBadWord(str) {
+    if (!str) return false;
+    const lower = String(str).toLowerCase();
+    // Убираем пробелы, точки, дефисы, подчёркивания
+    const cleaned = lower.replace(/[\s\.\-_,\*\(\)\[\]\{\}\/\\|:;!@#\$%\^&\+=]/g, '');
+    for (const w of BAD_WORDS) {
+        if (cleaned.includes(w)) return true;
+    }
+    return false;
+}
+
 const DEFAULT_STATE = {
     balance: 1000,
     nickname: '',
     playerId: '',
+    avatarUrl: '',
     isTester: false,
-    isAdminPlus: false,
+    isAdmin: false,
     usedPromos: [],
     arrowColor: '#c23a2b',
     fastSpin: false,
@@ -859,17 +922,20 @@ const DEFAULT_STATE = {
 };
 
 const state = { ...DEFAULT_STATE };
-// ВАЖНО: этот ключ НИКОГДА не меняем, иначе потеряются сохранения
 const LS_KEY = 'roulette_state';
 
 function save() {
     try {
+        if (state.balance > MAX_BALANCE) state.balance = MAX_BALANCE;
+        if (state.balance < 0) state.balance = 0;
+
         const toSave = {
             balance: state.balance,
             nickname: state.nickname,
             playerId: state.playerId,
+            avatarUrl: state.avatarUrl,
             isTester: state.isTester,
-            isAdminPlus: state.isAdminPlus,
+            // isAdmin НЕ сохраняем — вычисляется по MASTER_ID
             usedPromos: state.usedPromos,
             arrowColor: state.arrowColor,
             fastSpin: state.fastSpin,
@@ -885,14 +951,18 @@ function save() {
 function load() {
     try {
         const raw = localStorage.getItem(LS_KEY);
-        if (!raw) return;
+        if (!raw) {
+            state.isAdmin = (state.playerId === MASTER_ID);
+            return;
+        }
         const parsed = JSON.parse(raw);
-        // Загружаем ТОЛЬКО те поля, которые есть и корректны
-        if (typeof parsed.balance === 'number') state.balance = parsed.balance;
+        if (typeof parsed.balance === 'number' && isFinite(parsed.balance)) {
+            state.balance = Math.min(parsed.balance, MAX_BALANCE);
+        }
         if (typeof parsed.nickname === 'string') state.nickname = parsed.nickname;
         if (typeof parsed.playerId === 'string') state.playerId = parsed.playerId;
+        if (typeof parsed.avatarUrl === 'string') state.avatarUrl = parsed.avatarUrl;
         if (typeof parsed.isTester === 'boolean') state.isTester = parsed.isTester;
-        if (typeof parsed.isAdminPlus === 'boolean') state.isAdminPlus = parsed.isAdminPlus;
         if (Array.isArray(parsed.usedPromos)) state.usedPromos = parsed.usedPromos;
         if (typeof parsed.arrowColor === 'string') state.arrowColor = parsed.arrowColor;
         if (typeof parsed.fastSpin === 'boolean') state.fastSpin = parsed.fastSpin;
@@ -901,6 +971,8 @@ function load() {
         if (typeof parsed.alwaysWin === 'boolean') state.alwaysWin = parsed.alwaysWin;
         if (typeof parsed.alwaysPrize === 'boolean') state.alwaysPrize = parsed.alwaysPrize;
     } catch(e) {}
+
+    state.isAdmin = (state.playerId === MASTER_ID);
 }
 
 function getOrCreatePlayerId() {
@@ -920,12 +992,18 @@ function pushMyBalanceToFirebase() {
     if (!window.FB) return;
     try {
         const myId = getOrCreatePlayerId();
+        let bal = state.balance;
+        if (!isFinite(bal) || bal > MAX_BALANCE) bal = MAX_BALANCE;
+        if (bal < 0) bal = 0;
+
         const myRef = window.FB.ref(window.FB.db, 'leaderboard/' + myId);
         window.FB.set(myRef, {
             name: state.nickname || 'Гость',
-            balance: state.balance,
+            balance: bal,
+            avatarUrl: state.avatarUrl || '',
             isTester: state.isTester,
-            isAdminPlus: state.isAdminPlus,
+            isAdminPlus: false, // отключено
+            isAdmin: state.isAdmin,
             updatedAt: Date.now(),
         });
     } catch(e) { console.warn('Firebase push failed', e); }
@@ -948,13 +1026,19 @@ function renderLeaderboard() {
         fbUnsubscribe = window.FB.onValue(lbRef, (snapshot) => {
             const data = snapshot.val() || {};
             const myId = state.playerId;
-            const players = Object.entries(data).map(([id, p]) => ({
-                id,
-                name: p.name || 'Гость',
-                balance: Number(p.balance) || 0,
-                isTester: !!p.isTester,
-                isAdminPlus: !!p.isAdminPlus,
-            }));
+            const players = Object.entries(data).map(([id, p]) => {
+                let bal = Number(p.balance);
+                if (!isFinite(bal) || bal > MAX_BALANCE) bal = MAX_BALANCE;
+                if (bal < 0) bal = 0;
+                return {
+                    id,
+                    name: p.name || 'Гость',
+                    balance: bal,
+                    avatarUrl: p.avatarUrl || '',
+                    isTester: !!p.isTester,
+                    isAdmin: !!p.isAdmin,
+                };
+            });
 
             players.sort((a, b) => b.balance - a.balance);
 
@@ -970,11 +1054,14 @@ function renderLeaderboard() {
                 const rank = i + 1;
                 const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
                 let badge = '';
-                if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN+</span>';
+                if (p.isAdmin) badge = '<span class="admin-tag admin">ADMIN</span>';
                 else if (p.isTester) badge = '<span class="admin-tag tester">TESTER</span>';
+                const avatarHtml = p.avatarUrl
+                    ? `<div class="lb-avatar"><img src="${escapeHtml(p.avatarUrl)}" onerror="this.style.display='none'; this.parentNode.textContent='${escapeHtml((p.name||'?').charAt(0).toUpperCase())}'"></div>`
+                    : `<div class="lb-avatar">${escapeHtml((p.name||'?').charAt(0).toUpperCase())}</div>`;
                 row.innerHTML = `
                     <div class="lb-rank ${rankClass}">#${rank}</div>
-                    <div class="lb-name">${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
+                    <div class="lb-name">${avatarHtml}${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
                     <div class="lb-balance">${p.balance.toFixed(2)}</div>
                 `;
                 list.appendChild(row);
@@ -1001,23 +1088,32 @@ function update() {
         $('balanceTop').classList.remove('zero');
         $('balanceTop').classList.add('hidden');
     } else {
-        $('balanceTop').textContent = state.balance.toFixed(2);
-        $('balanceTop').classList.toggle('zero', state.balance <= 0);
+        let b = state.balance;
+        if (!isFinite(b) || b > MAX_BALANCE) b = MAX_BALANCE;
+        $('balanceTop').textContent = b.toFixed(2);
+        $('balanceTop').classList.toggle('zero', b <= 0);
         $('balanceTop').classList.remove('hidden');
     }
     $('nickDisplay').textContent = state.nickname || 'Гость';
-    $('avatarLetter').textContent = (state.nickname || '?').charAt(0).toUpperCase();
 
-    const tag = $('adminTag');
     const av = $('avatarLetter');
-    av.classList.remove('tester', 'admin-plus');
-    tag.classList.remove('tester', 'admin-plus');
+    const tag = $('adminTag');
+    av.classList.remove('tester', 'admin', 'admin-plus');
+    tag.classList.remove('tester', 'admin', 'admin-plus');
 
-    if (state.isAdminPlus) {
+    // Аватар
+    if (state.avatarUrl) {
+        av.innerHTML = `<img src="${escapeHtml(state.avatarUrl)}" onerror="this.parentNode.textContent='${escapeHtml((state.nickname||'?').charAt(0).toUpperCase())}'">`;
+    } else {
+        av.textContent = (state.nickname || '?').charAt(0).toUpperCase();
+    }
+
+    // Бейдж
+    if (state.isAdmin) {
         tag.style.display = 'inline-block';
-        tag.textContent = 'ADMIN+';
-        tag.classList.add('admin-plus');
-        av.classList.add('admin-plus');
+        tag.textContent = 'ADMIN';
+        tag.classList.add('admin');
+        av.classList.add('admin');
     } else if (state.isTester) {
         tag.style.display = 'inline-block';
         tag.textContent = 'TESTER';
@@ -1027,9 +1123,18 @@ function update() {
         tag.style.display = 'none';
     }
 
-    $('adminPlusPanel').style.display = state.isAdminPlus ? 'block' : 'none';
+    $('adminPlusPanel').style.display = state.isAdmin ? 'block' : 'none';
+    $('adminPanel').style.display = state.isAdmin ? 'block' : 'none';
     $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
     $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
+
+    // Аватар-превью в профиле
+    const ap = $('avatarPreview');
+    if (state.avatarUrl) {
+        ap.innerHTML = `<img src="${escapeHtml(state.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
+    } else {
+        ap.textContent = '?';
+    }
 
     updateWheel();
     updateStats();
@@ -1043,7 +1148,7 @@ function updateStats() {
 
     const chance = getChance();
     if (chance > 0) {
-        $('statChance').textContent = chance.toFixed(2) + '%';
+        $('statChance').textContent = chance.toFixed(4) + '%';
         $('statMult').textContent = 'x' + (100 / chance).toFixed(2);
         $('winHint').textContent = 'x' + (100 / chance).toFixed(2);
     } else {
@@ -1090,7 +1195,7 @@ function updateWheel() {
     const chance = getChance();
     const arc = $('winArc');
 
-    if (chance <= 0) {
+    if (chance < MIN_CHANCE) {
         $('wheelPct').textContent = '—';
         $('wheelState').textContent = '—';
         $('wheelState').className = 'wheel-state';
@@ -1100,7 +1205,7 @@ function updateWheel() {
         return;
     }
 
-    $('wheelPct').textContent = chance.toFixed(2) + '%';
+    $('wheelPct').textContent = chance.toFixed(4) + '%';
     const half = (chance / 100) * 180;
     arc.setAttribute('d', arcPath(180 - half, 180 + half));
 
@@ -1120,7 +1225,7 @@ function updateWheel() {
         $('wheelState').className = 'wheel-state danger';
     }
 
-    $('spinBtn').disabled = spinning || chance > 80;
+    $('spinBtn').disabled = spinning || chance > 80 || chance < MIN_CHANCE;
 }
 
 function applyMult(m) {
@@ -1153,11 +1258,12 @@ function spin() {
 
     const chance = getChance();
     if (chance > 80) { showResult('Шанс > 80%', 'lose'); return; }
+    if (chance < MIN_CHANCE) { showResult('Шанс < 0.1%', 'lose'); return; }
 
     Sound.resume();
 
     let isWin;
-    if (state.isAdminPlus && state.alwaysWin) {
+    if (state.isAdmin && state.alwaysWin) {
         isWin = true;
     } else {
         isWin = Math.random() * 100 < chance;
@@ -1165,7 +1271,7 @@ function spin() {
 
     let prizeActive = false;
     if (isWin) {
-        if (state.isAdminPlus && state.alwaysPrize) {
+        if (state.isAdmin && state.alwaysPrize) {
             prizeSectorVisible = true;
             prizeActive = true;
         } else {
@@ -1189,6 +1295,7 @@ function spin() {
 
     state.balance -= bet;
     if (isWin) state.balance += payout;
+    if (state.balance > MAX_BALANCE) state.balance = MAX_BALANCE;
 
     const half = (chance / 100) * 180;
     const prizeHalfDeg = (2 * half) * 0.10 / 2;
@@ -1281,7 +1388,7 @@ function triggerCashback(b) {
     else if (roll < 71) pct = 15;
     if (pct === 0) return;
     const amount = b * (pct / 100);
-    state.balance += amount;
+    state.balance = Math.min(state.balance + amount, MAX_BALANCE);
     save(); update();
     showResult('Кэшбек +' + amount.toFixed(2), 'win');
     Sound.cashback();
@@ -1388,10 +1495,36 @@ document.querySelectorAll('.tabs button').forEach(btn => {
 function saveNick() {
     const v = $('nickInput').value.trim();
     if (v.length < 1) return alert('Введи ник');
+    if (v.length > 20) return alert('Ник слишком длинный');
+    if (containsBadWord(v)) {
+        return alert('❌ Ник содержит запрещённые слова. Выбери другой.');
+    }
     state.nickname = v;
     save(); update();
     pushMyBalanceToFirebase();
     alert('Ник сохранён: ' + v);
+}
+
+function saveAvatar() {
+    let url = $('avatarUrlInput').value.trim();
+    if (!url) {
+        return alert('Вставь ссылку на картинку');
+    }
+    if (!/^https?:\/\//i.test(url)) {
+        return alert('Ссылка должна начинаться с http:// или https://');
+    }
+    state.avatarUrl = url;
+    save(); update();
+    pushMyBalanceToFirebase();
+    alert('Аватар сохранён');
+}
+
+function resetAvatar() {
+    state.avatarUrl = '';
+    $('avatarUrlInput').value = '';
+    save(); update();
+    pushMyBalanceToFirebase();
+    Sound.click();
 }
 
 // ============================================================
@@ -1422,9 +1555,10 @@ function applyPromo() {
         return;
     }
 
-    if (promo.balance) state.balance += promo.balance;
+    if (promo.balance) {
+        state.balance = Math.min(state.balance + promo.balance, MAX_BALANCE);
+    }
     if (promo.tester) state.isTester = true;
-    if (promo.adminPlus) state.isAdminPlus = true;
     if (once) state.usedPromos.push(code);
 
     save(); update();
@@ -1434,18 +1568,18 @@ function applyPromo() {
     msg.className = 'promo-msg ' + (promo.msgType || 'ok');
     $('promoInput').value = '';
 
-    if (promo.adminPlus || promo.tester) Sound.prize();
+    if (promo.tester) Sound.prize();
     else Sound.win();
 }
 
 // ============================================================
-// ADMIN+
+// ADMIN ФУНКЦИИ (только для MASTER_ID)
 // ============================================================
 function adminSetBalance() {
-    if (!state.isAdminPlus) return;
+    if (!state.isAdmin) return;
     const v = parseFloat($('adminBalanceInput').value);
     if (isNaN(v) || v < 0) { alert('Введи корректное число'); return; }
-    state.balance = v;
+    state.balance = Math.min(v, MAX_BALANCE);
     save(); update();
     pushMyBalanceToFirebase();
     $('adminBalanceInput').value = '';
@@ -1453,11 +1587,69 @@ function adminSetBalance() {
 }
 
 function adminAddBalance(amount) {
-    if (!state.isAdminPlus) return;
-    state.balance += amount;
+    if (!state.isAdmin) return;
+    state.balance = Math.min(state.balance + amount, MAX_BALANCE);
     save(); update();
     pushMyBalanceToFirebase();
     Sound.cashback();
+}
+
+function adminWipeAllBalances() {
+    if (!state.isAdmin) return;
+    $('confirmTitle').textContent = 'Обнулить балансы?';
+    $('confirmText').innerHTML = 'У ВСЕХ игроков баланс станет 1000.<br>Это действие нельзя отменить.';
+    $('confirmBtn').textContent = 'Да, обнулить';
+    $('confirmBtn').onclick = doWipeAllBalances;
+    $('confirmOverlay').classList.add('active');
+}
+
+function doWipeAllBalances() {
+    $('confirmOverlay').classList.remove('active');
+    if (!window.FB) { alert('Firebase не загружен'); return; }
+
+    const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
+    window.FB.get(lbRef).then((snapshot) => {
+        const data = snapshot.val() || {};
+        const promises = [];
+        for (const id of Object.keys(data)) {
+            const pRef = window.FB.ref(window.FB.db, 'leaderboard/' + id);
+            promises.push(window.FB.set(pRef, {
+                ...data[id],
+                balance: 1000,
+                updatedAt: Date.now(),
+            }));
+        }
+        return Promise.all(promises);
+    }).then(() => {
+        alert('✅ Балансы всех игроков обнулены до 1000');
+        state.balance = 1000;
+        save(); update();
+        pushMyBalanceToFirebase();
+        renderLeaderboard();
+    }).catch(err => {
+        alert('Ошибка: ' + err.message);
+    });
+}
+
+function adminWipeLeaderboard() {
+    if (!state.isAdmin) return;
+    $('confirmTitle').textContent = 'Очистить лидерборд?';
+    $('confirmText').innerHTML = 'ВСЕ игроки будут удалены из списка.<br>Они появятся снова при следующем заходе.';
+    $('confirmBtn').textContent = 'Да, очистить';
+    $('confirmBtn').onclick = doWipeLeaderboard;
+    $('confirmOverlay').classList.add('active');
+}
+
+function doWipeLeaderboard() {
+    $('confirmOverlay').classList.remove('active');
+    if (!window.FB) { alert('Firebase не загружен'); return; }
+    const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
+    window.FB.set(lbRef, null).then(() => {
+        alert('✅ Лидерборд очищен');
+        renderLeaderboard();
+    }).catch(err => {
+        alert('Ошибка: ' + err.message);
+    });
 }
 
 // ============================================================
@@ -1497,14 +1689,14 @@ $('soundToggle').addEventListener('click', () => {
 });
 
 $('alwaysWinToggle').addEventListener('click', () => {
-    if (!state.isAdminPlus) return;
+    if (!state.isAdmin) return;
     state.alwaysWin = !state.alwaysWin;
     $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
     save(); Sound.cashback();
 });
 
 $('alwaysPrizeToggle').addEventListener('click', () => {
-    if (!state.isAdminPlus) return;
+    if (!state.isAdmin) return;
     state.alwaysPrize = !state.alwaysPrize;
     $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
     save(); Sound.cashback();
@@ -1515,6 +1707,10 @@ $('alwaysPrizeToggle').addEventListener('click', () => {
 // ============================================================
 function askReset() {
     Sound.resume(); Sound.click();
+    $('confirmTitle').textContent = 'Уверен?';
+    $('confirmText').innerHTML = 'Баланс сбросится до 1000.<br>Ник, статус и промокоды сохранятся.';
+    $('confirmBtn').textContent = 'Да, сбросить';
+    $('confirmBtn').onclick = doReset;
     $('confirmOverlay').classList.add('active');
 }
 function cancelReset() {
@@ -1550,6 +1746,7 @@ if (state.fastSpin) {
 $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
+$('avatarUrlInput').value = state.avatarUrl || '';
 
 $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
 $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
