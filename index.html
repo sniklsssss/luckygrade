@@ -237,7 +237,6 @@
     .btn.gold:hover { background: linear-gradient(135deg, #f5b030, #d44a3b); }
     .btn.danger { background: #8a1a1a; }
     .btn.danger:hover { background: #b02222; }
-    .btn.small { padding: 6px 12px; font-size: 10px; }
     .promo-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .promo-row input { flex: 1; min-width: 120px; }
     .promo-msg { margin-top: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; min-height: 14px; }
@@ -262,8 +261,6 @@
     }
     .toggle.on { background: #2a1a15; border-color: var(--red); }
     .toggle.on::after { transform: translateX(18px); background: var(--red); }
-    .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
-    .toggle.on.gold::after { background: var(--gold); }
     .lb-wrap { max-width: 720px; margin: 0 auto; width: 100%; }
     .lb-header {
         display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
@@ -437,7 +434,6 @@
 </style>
 </head>
 <body>
-
 <div class="header">
     <div class="user-block">
         <div class="avatar" id="avatarLetter">?</div>
@@ -627,15 +623,7 @@
         </div>
 
         <div class="card admin-plus" id="adminPlusPanel" style="display:none;">
-            <h3>★ ADMIN+ ПАНЕЛЬ ★</h3>
-            <div class="toggle-row">
-                <span>Все апгрейды заходят</span>
-                <div class="toggle gold" id="alwaysWinToggle"></div>
-            </div>
-            <div class="toggle-row">
-                <span>Приз всегда выпадает</span>
-                <div class="toggle gold" id="alwaysPrizeToggle"></div>
-            </div>
+            <h3>★ ADMIN ПАНЕЛЬ ★</h3>
             <div class="field" style="margin-top:12px;">
                 <label>Изменить баланс</label>
                 <input type="text" id="adminBalanceInput" placeholder="1000" inputmode="decimal">
@@ -707,9 +695,10 @@
 const $ = id => document.getElementById(id);
 
 // ============================================================
-// ЗАЩИТА ADMIN — только для владельца по хешу playerId
+// ЗАЩИТА ADMIN — только по секретному ключу в localStorage
 // ============================================================
-const MASTER_ID_HASH = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
+const ADMIN_SECRET = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
+const ADMIN_NICK = 'ADMIN';
 let ADMIN_OK = false;
 
 // ============================================================
@@ -927,7 +916,6 @@ const Sound = (() => {
 // ============================================================
 // КОНСТАНТЫ
 // ============================================================
-const ADMIN_NICK = 'ADMIN';
 const MAX_BALANCE = 9999999999;
 const MIN_CHANCE = 0.1;
 const FULL_WIPE_PASSWORD = 'qhdisopwjsosfjel12';
@@ -1041,8 +1029,6 @@ const DEFAULT_STATE = {
     fastSpin: false,
     soundOn: true,
     pending: null,
-    alwaysWin: false,
-    alwaysPrize: false,
     balanceVersion: 1,
     nonce: 0,
 };
@@ -1066,8 +1052,6 @@ function save() {
             fastSpin: state.fastSpin,
             soundOn: state.soundOn,
             pending: state.pending,
-            alwaysWin: state.alwaysWin,
-            alwaysPrize: state.alwaysPrize,
             balanceVersion: state.balanceVersion,
             nonce: state.nonce,
         };
@@ -1092,21 +1076,19 @@ function load() {
             if (typeof parsed.fastSpin === 'boolean') state.fastSpin = parsed.fastSpin;
             if (typeof parsed.soundOn === 'boolean') state.soundOn = parsed.soundOn;
             if (parsed.pending) state.pending = parsed.pending;
-            if (typeof parsed.alwaysWin === 'boolean') state.alwaysWin = parsed.alwaysWin;
-            if (typeof parsed.alwaysPrize === 'boolean') state.alwaysPrize = parsed.alwaysPrize;
             if (typeof parsed.balanceVersion === 'number') state.balanceVersion = parsed.balanceVersion;
             if (typeof parsed.nonce === 'number') state.nonce = parsed.nonce;
         }
     } catch(e) {}
 
+    // isAdmin ВСЕГДА сбрасывается — восстанавливается только через checkAdmin()
     state.isAdmin = false;
 }
 
 async function checkAdmin() {
     try {
-        // Админ активируется только если в localStorage вручную вписан секрет
         const secret = localStorage.getItem('lg_admin_key');
-        if (secret === '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351') {
+        if (secret === ADMIN_SECRET) {
             ADMIN_OK = true;
             state.isAdmin = true;
             state.nickname = ADMIN_NICK;
@@ -1231,7 +1213,7 @@ function renderLeaderboard() {
                 const rank = i + 1;
                 const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
                 let badge = '';
-                if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN+</span>';
+                if (p.isAdminPlus) badge = '<span class="admin-tag admin-plus">ADMIN</span>';
                 else if (p.isTester) badge = '<span class="admin-tag tester">TESTER</span>';
                 const avatarHtml = p.avatarUrl
                     ? `<div class="lb-avatar"><img src="${escapeHtml(p.avatarUrl)}" onerror="this.style.display='none'; this.parentNode.textContent='${escapeHtml((p.name||'?').charAt(0).toUpperCase())}'"></div>`
@@ -1287,7 +1269,7 @@ function update() {
 
     if (state.isAdmin) {
         tag.style.display = 'inline-block';
-        tag.textContent = 'ADMIN+';
+        tag.textContent = 'ADMIN';
         tag.classList.add('admin-plus');
         av.classList.add('admin-plus');
     } else if (state.isTester) {
@@ -1300,8 +1282,6 @@ function update() {
     }
 
     $('adminPlusPanel').style.display = state.isAdmin ? 'block' : 'none';
-    $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
-    $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
 
     const ap = $('avatarPreview');
     if (state.avatarUrl) {
@@ -1321,7 +1301,7 @@ function updateStats() {
     $('statWin').textContent = win.toFixed(2);
 
     const chance = getChance();
-    if (chance > 0) {
+    if (chance > 0 && chance <= 80) {
         const pct = fmtPct(chance);
         const mult = (100 / chance).toFixed(2);
         $('statChance').textContent = pct + '%';
@@ -1500,7 +1480,7 @@ async function openProfileModal(playerId) {
         $('modalName').textContent = p.name || 'Гость';
 
         const tags = [];
-        if (p.isAdminPlus) tags.push('<span class="admin-tag admin-plus">ADMIN+</span>');
+        if (p.isAdminPlus) tags.push('<span class="admin-tag admin-plus">ADMIN</span>');
         else if (p.isTester) tags.push('<span class="admin-tag tester">TESTER</span>');
         $('modalTags').innerHTML = tags.join('');
 
@@ -1533,7 +1513,7 @@ function closeProfileModal() {
 }
 
 // ============================================================
-// SPIN
+// SPIN — ЧЕСТНЫЙ, БЕЗ ADMIN-OVERRIDE
 // ============================================================
 async function spin() {
     if (spinning) return;
@@ -1562,22 +1542,15 @@ async function spin() {
     const pScaled = Math.floor(chance * 100000000);
     const threshold = Math.floor(pScaled * space / 100000000);
 
+    // ВСЕГДА честный результат — никаких override
+    const isWin = roll < threshold;
 
-    const isAdmin = ADMIN_OK && state.isAdmin;
-
-    let isWin = roll < threshold;
-if (isAdmin && state.alwaysWin) isWin = true;
-
+    // Приз — всегда случайный
     let prizeActive = false;
     if (isWin) {
-        if (isAdmin && state.alwaysPrize) {
-            prizeSectorVisible = true;
-            prizeActive = true;
-        } else {
-            const sectorAppears = Math.random() < 0.05;
-            prizeSectorVisible = sectorAppears;
-            if (sectorAppears) prizeActive = Math.random() < 0.10;
-        }
+        const sectorAppears = Math.random() < 0.05;
+        prizeSectorVisible = sectorAppears;
+        if (sectorAppears) prizeActive = Math.random() < 0.10;
     } else {
         prizeSectorVisible = false;
     }
@@ -1853,7 +1826,7 @@ $('avatarFile').addEventListener('change', e => {
     }
 
     if (!checkImageSafe(file)) {
-        alert('❌ Запрещённый контент. Загрузи другую картинку.');
+        alert('❌ Запрещённый контент.');
         e.target.value = '';
         return;
     }
@@ -1929,7 +1902,7 @@ async function applyPromo() {
 }
 
 // ============================================================
-// ADMIN ФУНКЦИИ (только при ADMIN_OK)
+// ADMIN ФУНКЦИИ
 // ============================================================
 function adminSetBalance() {
     if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
@@ -1956,12 +1929,12 @@ function adminFullWipe() {
 
     if (entered !== FULL_WIPE_PASSWORD) {
         Sound.lose();
-        alert('❌ Неверный пароль. Сброс отменён.');
+        alert('❌ Неверный пароль.');
         return;
     }
 
     $('confirmTitle').textContent = 'ПОЛНЫЙ СБРОС ВСЕХ?';
-    $('confirmText').innerHTML = `Это <b style="color:#e54a35;">НЕОБРАТИМОЕ</b> действие:<br><br>• Все балансы в Firebase → 1000<br>• Все записи лидерборда удалятся<br>• Вся история апгрейдов удалится<br>• Ники, статусы, промокоды — сбросятся<br><br>При следующем заходе все начнут с нуля.`;
+    $('confirmText').innerHTML = 'Это <b style="color:#e54a35;">НЕОБРАТИМОЕ</b> действие:<br><br>• Все балансы в Firebase → 1000<br>• Все записи лидерборда удалятся<br>• Вся история апгрейдов удалится<br>• Ники, статусы, промокоды — сбросятся<br><br>При следующем заходе все начнут с нуля.';
     $('confirmBtn').textContent = 'ДА, СБРОСИТЬ ВСЁ';
     $('confirmBtn').onclick = doFullWipe;
     $('confirmOverlay').classList.add('active');
@@ -2035,20 +2008,6 @@ $('soundToggle').addEventListener('click', () => {
     Sound.setEnabled(state.soundOn);
     if (state.soundOn) { Sound.resume(); Sound.click(); }
     save();
-});
-
-$('alwaysWinToggle').addEventListener('click', () => {
-    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-    state.alwaysWin = !state.alwaysWin;
-    $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
-    save(); Sound.cashback();
-});
-
-$('alwaysPrizeToggle').addEventListener('click', () => {
-    if (!ADMIN_OK || !state.isAdmin) { alert('⛔ Нет доступа'); return; }
-    state.alwaysPrize = !state.alwaysPrize;
-    $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
-    save(); Sound.cashback();
 });
 
 // ============================================================
