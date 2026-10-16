@@ -1539,8 +1539,7 @@ async function spin() {
     const rollHex = digest.substring(0, 13);
     const roll = parseInt(rollHex, 16);
     const space = Math.pow(2, 52);
-    const pScaled = Math.floor(chance * 100000000);
-    const threshold = Math.floor(pScaled * space / 100000000);
+    const threshold = Math.floor((chance / 100) * space);
 
     // ВСЕГДА честный результат — никаких override
     const isWin = roll < threshold;
