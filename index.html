@@ -769,6 +769,11 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 
 const $ = id => document.getElementById(id);
 
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+const ADMIN_SECRET = '6527fd65...';
+
 const ADMIN_SECRET = '6527fd65c9408261e14e6d7806753033b452a43ae4005c0425c36e4e48425351';
 const ADMIN_NICK = 'ADMIN';
 let ADMIN_OK = false;
