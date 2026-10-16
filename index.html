@@ -7,7 +7,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, remove, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAkFgX0Q2SiPCoik633Jhfbx3m-ujW9Pzc",
@@ -21,7 +21,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  window.FB = { db, ref, set, get, remove, onValue };
+  window.FB = { db, ref, set, get, remove, push, onValue, query, orderByChild, limitToLast };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -34,6 +34,7 @@
         --red: #c23a2b; --red-bright: #e54a35; --gold: #c9942c;
         --green: #6fa32c; --arrow: #c23a2b;
         --tester: #22b8a0; --admin-plus: #e5a020;
+        --win: #6fa32c; --lose: #c23a2b; --prize: #e5b73c;
     }
     html, body {
         background: var(--bg); color: var(--text); min-height: 100vh;
@@ -247,6 +248,7 @@
     .btn.gold:hover { background: linear-gradient(135deg, #f5b030, #d44a3b); }
     .btn.danger { background: #8a1a1a; }
     .btn.danger:hover { background: #b02222; }
+    .btn.small { padding: 6px 12px; font-size: 10px; }
 
     .promo-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .promo-row input { flex: 1; min-width: 120px; }
@@ -277,6 +279,7 @@
     .toggle.on.gold { background: #3a2a10; border-color: var(--gold); }
     .toggle.on.gold::after { background: var(--gold); }
 
+    /* ============ LEADERBOARD ============ */
     .lb-wrap { max-width: 720px; margin: 0 auto; width: 100%; }
     .lb-header {
         display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
@@ -289,7 +292,9 @@
         display: grid; grid-template-columns: 50px 1fr 110px; gap: 8px;
         padding: 12px; background: var(--bg2); border: 1px solid var(--line);
         margin-bottom: 5px; align-items: center; min-width: 0;
+        cursor: pointer; transition: border-color 0.15s, background 0.15s;
     }
+    .lb-row:hover { border-color: var(--line2); background: #16161c; }
     .lb-row.me { border-color: var(--admin-plus); background: rgba(229,160,32,0.06); }
     .lb-rank { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: var(--muted); }
     .lb-rank.top1 { color: #e5a020; text-shadow: 0 0 8px rgba(229,160,32,0.5); }
@@ -307,6 +312,10 @@
     .lb-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--green); text-align: right; }
     .lb-empty { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; background: var(--bg2); border: 1px solid var(--line); }
 
+    /* ============ AVATAR UPLOAD ============ */
+    .avatar-upload {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
     .avatar-preview {
         width: 80px; height: 80px; border-radius: 6px;
         background: var(--line2); flex-shrink: 0; overflow: hidden;
@@ -315,7 +324,127 @@
         border: 1px solid var(--line);
     }
     .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .file-label {
+        display: inline-block; padding: 9px 18px;
+        background: var(--green); color: #fff; cursor: pointer;
+        font-family: inherit; font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1.5px;
+    }
+    .file-label:hover { background: #85c035; }
+    .file-input { display: none; }
+    .avatar-hint { font-size: 10px; color: var(--dim); width: 100%; }
 
+    /* ============ HISTORY ============ */
+    .history-list {
+        display: flex; flex-direction: column; gap: 5px;
+        max-height: 400px; overflow-y: auto;
+    }
+    .hist-row {
+        display: grid;
+        grid-template-columns: 28px 1fr auto auto;
+        gap: 8px;
+        padding: 8px 10px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        align-items: center;
+        font-size: 11px;
+    }
+    .hist-row.win { border-left: 3px solid var(--win); }
+    .hist-row.lose { border-left: 3px solid var(--lose); }
+    .hist-row.prize { border-left: 3px solid var(--prize); }
+    .hist-icon { font-size: 14px; text-align: center; }
+    .hist-text { color: var(--muted); min-width: 0; }
+    .hist-text b { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+    .hist-profit {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700; text-align: right; white-space: nowrap;
+    }
+    .hist-profit.win { color: var(--green); }
+    .hist-profit.lose { color: var(--red-bright); }
+    .hist-profit.prize { color: var(--gold); }
+    .hist-time {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px; color: var(--dim);
+        text-align: right; white-space: nowrap;
+    }
+    .hist-empty {
+        text-align: center; padding: 30px 16px;
+        color: var(--muted); font-size: 12px;
+        background: var(--bg); border: 1px solid var(--line);
+    }
+
+    /* ============ PROVABLY FAIR ============ */
+    .pf-box {
+        background: var(--bg); border: 1px solid var(--line);
+        padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    }
+    .pf-title {
+        font-size: 11px; font-weight: 700; color: var(--gold);
+        text-transform: uppercase; letter-spacing: 2px;
+        margin-bottom: 10px; font-family: 'Inter', sans-serif;
+    }
+    .pf-row {
+        display: grid; grid-template-columns: 110px 1fr;
+        gap: 8px; padding: 5px 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .pf-row:last-child { border-bottom: none; }
+    .pf-label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .pf-value { color: var(--text); word-break: break-all; user-select: text; }
+    .pf-value.win { color: var(--green); }
+    .pf-value.lose { color: var(--red-bright); }
+    .pf-hash { color: #7a7a8a; font-size: 9px; }
+
+    /* ============ MODAL (чужой профиль) ============ */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+        display: none; align-items: center; justify-content: center;
+        z-index: 9999; backdrop-filter: blur(6px); padding: 16px;
+        overflow-y: auto;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: var(--bg2); border: 1px solid var(--line2);
+        padding: 20px; max-width: 540px; width: 100%;
+        max-height: 90vh; overflow-y: auto;
+        position: relative;
+    }
+    .modal-close {
+        position: absolute; top: 12px; right: 12px;
+        background: transparent; border: none;
+        color: var(--muted); font-size: 20px;
+        cursor: pointer; padding: 4px 10px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-header {
+        display: flex; align-items: center; gap: 14px;
+        margin-bottom: 16px; padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+    }
+    .modal-avatar {
+        width: 60px; height: 60px; border-radius: 6px;
+        background: var(--line2); flex-shrink: 0; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; font-weight: 700;
+        border: 1px solid var(--line);
+    }
+    .modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-name-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .modal-name {
+        font-size: 18px; font-weight: 700; color: var(--text);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .modal-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .modal-balance {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px; color: var(--green); margin-top: 4px;
+    }
+    .modal-section-title {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 2px; color: var(--red); margin: 14px 0 8px;
+    }
+
+    /* ============ CONFIRM ============ */
     .confirm-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.9);
         display: none; align-items: center; justify-content: center;
@@ -335,6 +464,7 @@
     .confirm-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .confirm-buttons .btn { padding: 11px 22px; min-width: 110px; }
 
+    /* ============ CRASH ============ */
     .crash-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.95);
         display: none; align-items: center; justify-content: center;
@@ -379,6 +509,9 @@
         .field label { min-width: auto; width: 100%; }
         .field { flex-direction: column; align-items: stretch; }
         .field input[type="text"] { width: 100%; }
+        .hist-row { grid-template-columns: 24px 1fr auto; font-size: 10px; }
+        .hist-time { display: none; }
+        .pf-row { grid-template-columns: 90px 1fr; font-size: 9px; }
     }
 
     @media (max-width: 380px) {
@@ -481,6 +614,20 @@
             <div class="item">Множитель <span id="statMult">x1.25</span></div>
             <div class="result" id="statResult"></div>
         </div>
+
+        <!-- Provably Fair (после спина) -->
+        <div class="card" id="pfCard" style="display:none; width: 100%; max-width: 720px;">
+            <div class="pf-box">
+                <div class="pf-title">🔒 Provably Fair — проверка честности</div>
+                <div class="pf-row"><div class="pf-label">Server Seed</div><div class="pf-value" id="pfServerSeed">—</div></div>
+                <div class="pf-row"><div class="pf-label">Hash сервера</div><div class="pf-value pf-hash" id="pfServerHash">—</div></div>
+                <div class="pf-row"><div class="pf-label">Client Seed</div><div class="pf-value" id="pfClientSeed">—</div></div>
+                <div class="pf-row"><div class="pf-label">Nonce</div><div class="pf-value" id="pfNonce">—</div></div>
+                <div class="pf-row"><div class="pf-label">Roll</div><div class="pf-value" id="pfRoll">—</div></div>
+                <div class="pf-row"><div class="pf-label">Порог победы</div><div class="pf-value" id="pfThreshold">—</div></div>
+                <div class="pf-row"><div class="pf-label">Результат</div><div class="pf-value" id="pfResult">—</div></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -490,10 +637,13 @@
             <h3>Профиль</h3>
             <div class="field">
                 <label>Аватар</label>
-                <div class="avatar-preview" id="avatarPreview">?</div>
-                <input type="text" id="avatarUrlInput" placeholder="URL картинки (https://...)" style="flex:1; min-width: 160px;">
-                <button class="btn green" onclick="saveAvatar()">Сохранить</button>
-                <button class="btn danger" onclick="resetAvatar()">Убрать</button>
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="avatarPreview">?</div>
+                    <label class="file-label" for="avatarFile">Выбрать файл</label>
+                    <input type="file" id="avatarFile" class="file-input" accept="image/png,image/jpeg,image/webp,image/gif">
+                    <button class="btn danger" onclick="resetAvatar()">Убрать</button>
+                </div>
+                <div class="avatar-hint">PNG, JPG, WEBP или GIF. До 200 КБ. Без 18+ контента.</div>
             </div>
             <div class="field">
                 <label>Никнейм</label>
@@ -508,6 +658,12 @@
                 <button class="btn" onclick="applyPromo()">Активировать</button>
             </div>
             <div class="promo-msg" id="promoMsg"></div>
+        </div>
+        <div class="card">
+            <h3>Мои последние апгрейды</h3>
+            <div class="history-list" id="myHistory">
+                <div class="hist-empty">Пока нет ставок</div>
+            </div>
         </div>
     </div>
 </div>
@@ -594,6 +750,25 @@
     </div>
 </div>
 
+<!-- ===== МОДАЛКА ЧУЖОГО ПРОФИЛЯ ===== -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeProfileModal()">✕</button>
+        <div class="modal-header">
+            <div class="modal-avatar" id="modalAvatar">?</div>
+            <div class="modal-name-block">
+                <div class="modal-name" id="modalName">Игрок</div>
+                <div class="modal-tags" id="modalTags"></div>
+                <div class="modal-balance" id="modalBalance">0.00</div>
+            </div>
+        </div>
+        <div class="modal-section-title">Последние апгрейды</div>
+        <div class="history-list" id="modalHistory">
+            <div class="hist-empty">Пока нет ставок</div>
+        </div>
+    </div>
+</div>
+
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
         <div class="confirm-title" id="confirmTitle">Уверен?</div>
@@ -620,28 +795,17 @@
 
 <script>
 const $ = id => document.getElementById(id);
-
+</script>
 // ============================================================
-// КРАСИВОЕ ФОРМАТИРОВАНИЕ ПРОЦЕНТА
+// ФОРМАТИРОВАНИЕ ПРОЦЕНТА — максимум 2 знака
 // ============================================================
 function fmtPct(p) {
     if (!isFinite(p) || p <= 0) return '0.00';
-    // Округляем до 4 знаков
-    let fixed4 = p.toFixed(4);
-    // Если 4-й знак и 3-й знаки нули — округляем до 2
-    if (fixed4.endsWith('00')) {
-        return p.toFixed(2);
-    }
-    // Иначе — показываем 4 знака, но убираем хвостовые нули (если они есть)
-    // Пример: 0.1500 → 0.15, 0.1230 → 0.123
-    let trimmed = fixed4.replace(/0+$/, '');
-    // Если после точки меньше 2 символов — добавляем нули до 2
-    const dot = trimmed.indexOf('.');
-    if (dot >= 0) {
-        const decimals = trimmed.length - dot - 1;
-        if (decimals < 2) trimmed = trimmed + '0'.repeat(2 - decimals);
-    }
-    return trimmed;
+    // До 2 знаков
+    let val = Math.round(p * 100) / 100;
+    // Если 0 — показываем как 0.00
+    if (val === 0) return '0.00';
+    return val.toFixed(2);
 }
 
 // ============================================================
@@ -854,8 +1018,10 @@ const ADMIN_NICK = 'ADMIN';
 const MAX_BALANCE = 9999999999;
 const MIN_CHANCE = 0.1;
 const FULL_WIPE_PASSWORD = 'qhdisopwjsosfjel12';
+const HISTORY_LIMIT = 20;
+const AVATAR_MAX_SIZE = 200 * 1024; // 200 КБ
 
-// Зарезервированные ники
+// Запрещённые слова в нике
 const RESERVED_NICKS = [
     'admin', 'админ', 'administrator', 'администратор',
     'luckygrade', 'luckygradeadmin',
@@ -865,6 +1031,18 @@ const RESERVED_NICKS = [
     'system', 'система', 'root', 'рут',
     'luncher4', 'sniklsyt', 'sniklsssss',
     'dranik', 'rose',
+];
+
+const BAD_WORDS = [
+    'xyu', 'хуй', 'хуя', 'хуе', 'пизд', 'пиздец',
+    'бля', 'блядь', 'блят', 'еба', 'ебaть', 'еби', 'ебу',
+    'сука', 'суки', 'сучка', 'гандон', 'гондон',
+    'мразь', 'пидор', 'пидар', 'пидорас',
+    'шлюха', 'шлюхи', 'долбоеб', 'уеб', 'уёб',
+    'ахуе', 'охуе', 'нахуй', 'нахер',
+    'fuck', 'shit', 'bitch', 'dick', 'cunt', 'pussy',
+    'whore', 'slut', 'nigger', 'niga', 'faggot', 'retard',
+    'манда', 'письк', 'жопа', 'говно', 'мудак', 'козел', 'дебил', 'идиот',
 ];
 
 function normalizeNick(str) {
@@ -893,27 +1071,6 @@ function isReservedNick(str) {
     return false;
 }
 
-// Мат
-const BAD_WORDS = [
-    'xyu', 'xy', 'xep', 'xer', 'хуй', 'хуя', 'хуе', 'хуё',
-    'пизд', 'пиздец', 'пизж', 'пзд',
-    'бля', 'блядь', 'блят',
-    'еба', 'ебa', 'ебaть', 'ебaл', 'еби', 'ебуч', 'ебу', 'ебет', 'ебёт',
-    'сука', 'суки', 'сучка', 'сучки',
-    'гандон', 'гондон',
-    'мразь', 'пидор', 'пидaр', 'пидар', 'пидoр', 'пидорас',
-    'шлюха', 'шлюхи',
-    'долбоеб', 'долбaеб', 'долбоёб',
-    'уеб', 'уебaн', 'уёб',
-    'ахуе', 'охуе', 'охуен', 'охуи',
-    'нахуй', 'нахер',
-    'fuck', 'fck', 'fuk', 'shit', 'bitch', 'dick', 'cunt', 'pussy',
-    'whore', 'slut', 'nigger', 'niga', 'faggot', 'retard',
-    'манда', 'письк', 'жопа',
-    'говно', 'гoвнa',
-    'мудак', 'мудил', 'козел', 'козёл', 'сволоч', 'дебил', 'идиот',
-];
-
 function containsBadWord(str) {
     if (!str) return false;
     const cleaned = String(str).toLowerCase().replace(/[\s\.\-_,\*\(\)\[\]\{\}\/\\|:;!@#\$%\^&\+=]/g, '');
@@ -924,6 +1081,32 @@ function containsBadWord(str) {
 }
 
 // ============================================================
+// PROVABLY FAIR — HMAC_SHA256
+// ============================================================
+async function sha256Hex(text) {
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacSha256Hex(key, message) {
+    const enc = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+        'raw', enc.encode(key),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function randomHex(len) {
+    const bytes = new Uint8Array(Math.ceil(len / 2));
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, len);
+}
+
+// ============================================================
 // СОСТОЯНИЕ
 // ============================================================
 let bet = 100;
@@ -931,6 +1114,8 @@ let win = 125;
 let spinning = false;
 let rotation = 0;
 let prizeSectorVisible = false;
+let currentHistory = [];
+let lastPF = null;
 
 const DEFAULT_STATE = {
     balance: 1000,
@@ -947,6 +1132,7 @@ const DEFAULT_STATE = {
     alwaysWin: false,
     alwaysPrize: false,
     balanceVersion: 1,
+    nonce: 0,
 };
 
 const state = { ...DEFAULT_STATE };
@@ -971,6 +1157,7 @@ function save() {
             alwaysWin: state.alwaysWin,
             alwaysPrize: state.alwaysPrize,
             balanceVersion: state.balanceVersion,
+            nonce: state.nonce,
         };
         localStorage.setItem(LS_KEY, JSON.stringify(toSave));
     } catch(e) {}
@@ -996,6 +1183,7 @@ function load() {
             if (typeof parsed.alwaysWin === 'boolean') state.alwaysWin = parsed.alwaysWin;
             if (typeof parsed.alwaysPrize === 'boolean') state.alwaysPrize = parsed.alwaysPrize;
             if (typeof parsed.balanceVersion === 'number') state.balanceVersion = parsed.balanceVersion;
+            if (typeof parsed.nonce === 'number') state.nonce = parsed.nonce;
         }
     } catch(e) {}
 
@@ -1017,8 +1205,10 @@ function getOrCreatePlayerId() {
 }
 
 // ============================================================
-// ПРОВЕРКА ВЕРСИИ БАЛАНСА
+// FIREBASE
 // ============================================================
+let fbUnsubscribe = null;
+
 async function checkBalanceVersion() {
     if (!window.FB) return;
     try {
@@ -1032,17 +1222,12 @@ async function checkBalanceVersion() {
             state.pending = null;
             save();
             update();
-            pushMyBalanceToFirebase();
+            pushMyProfileToFirebase();
         }
     } catch(e) { console.warn('Version check failed', e); }
 }
 
-// ============================================================
-// FIREBASE
-// ============================================================
-let fbUnsubscribe = null;
-
-function pushMyBalanceToFirebase() {
+function pushMyProfileToFirebase() {
     if (!window.FB) return;
     try {
         const myId = getOrCreatePlayerId();
@@ -1051,13 +1236,8 @@ function pushMyBalanceToFirebase() {
         if (bal < 0) bal = 0;
 
         let sendName = state.nickname || 'Гость';
-        if (state.isAdmin) {
-            sendName = ADMIN_NICK;
-        } else if (isReservedNick(sendName)) {
-            sendName = 'Игрок';
-            state.nickname = '';
-            save();
-        }
+        if (state.isAdmin) sendName = ADMIN_NICK;
+        else if (isReservedNick(sendName)) { sendName = 'Игрок'; state.nickname = ''; save(); }
 
         const myRef = window.FB.ref(window.FB.db, 'leaderboard/' + myId);
         window.FB.set(myRef, {
@@ -1072,6 +1252,15 @@ function pushMyBalanceToFirebase() {
     } catch(e) { console.warn('Firebase push failed', e); }
 }
 
+async function pushHistoryToFirebase(record) {
+    if (!window.FB) return;
+    try {
+        const myId = getOrCreatePlayerId();
+        const hRef = window.FB.push(window.FB.ref(window.FB.db, 'history/' + myId));
+        await window.FB.set(hRef, record);
+    } catch(e) { console.warn('History push failed', e); }
+}
+
 function renderLeaderboard() {
     const list = $('leaderboardList');
     list.innerHTML = '<div class="lb-empty">Загрузка...</div>';
@@ -1082,7 +1271,7 @@ function renderLeaderboard() {
             return;
         }
 
-        pushMyBalanceToFirebase();
+        pushMyProfileToFirebase();
 
         const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
         if (fbUnsubscribe) { try { fbUnsubscribe(); } catch(e){} fbUnsubscribe = null; }
@@ -1114,6 +1303,8 @@ function renderLeaderboard() {
             players.forEach((p, i) => {
                 const row = document.createElement('div');
                 row.className = 'lb-row' + (p.id === myId ? ' me' : '');
+                row.dataset.playerId = p.id;
+                row.dataset.playerName = p.name;
                 const rank = i + 1;
                 const rankClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
                 let badge = '';
@@ -1127,6 +1318,7 @@ function renderLeaderboard() {
                     <div class="lb-name">${avatarHtml}${badge}<span class="lb-name-text">${escapeHtml(p.name)}</span></div>
                     <div class="lb-balance">${p.balance.toFixed(2)}</div>
                 `;
+                row.addEventListener('click', () => openProfileModal(p.id));
                 list.appendChild(row);
             });
         });
@@ -1307,9 +1499,125 @@ function showResult(text, type_) {
 }
 
 // ============================================================
-// SPIN
+// ИСТОРИЯ АПГРЕЙДОВ
 // ============================================================
-function spin() {
+function addToHistory(record) {
+    currentHistory.unshift(record);
+    if (currentHistory.length > HISTORY_LIMIT) currentHistory.length = HISTORY_LIMIT;
+    renderMyHistory();
+}
+
+function renderMyHistory() {
+    const box = $('myHistory');
+    if (!currentHistory || currentHistory.length === 0) {
+        box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>';
+        return;
+    }
+    box.innerHTML = currentHistory.map(r => renderHistRow(r)).join('');
+}
+
+function renderHistRow(r) {
+    const cls = r.type === 'prize' ? 'prize' : (r.win ? 'win' : 'lose');
+    const icon = r.type === 'prize' ? '★' : (r.win ? '✓' : '✕');
+    const betVal = Number(r.bet).toFixed(2);
+    const winVal = Number(r.targetWin).toFixed(2);
+    const profit = r.win ? '+' + Number(r.payout).toFixed(2) : '-' + Number(r.bet).toFixed(2);
+    const time = r.ts ? new Date(r.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="hist-row ${cls}">
+        <div class="hist-icon">${icon}</div>
+        <div class="hist-text"><b>${betVal}</b> → <b>${winVal}</b> (${fmtPct(r.chance)}%)</div>
+        <div class="hist-profit ${cls}">${profit}</div>
+        <div class="hist-time">${time}</div>
+    </div>`;
+}
+
+function loadHistoryFromFirebase() {
+    if (!window.FB) return;
+    const myId = state.playerId;
+    if (!myId) return;
+    const hRef = window.FB.query(
+        window.FB.ref(window.FB.db, 'history/' + myId),
+        window.FB.limitToLast(HISTORY_LIMIT)
+    );
+    window.FB.onValue(hRef, (snap) => {
+        const data = snap.val() || {};
+        const arr = Object.values(data);
+        arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        currentHistory = arr;
+        renderMyHistory();
+    });
+}
+
+function renderModalHistory(records) {
+    const box = $('modalHistory');
+    if (!records || records.length === 0) {
+        box.innerHTML = '<div class="hist-empty">Пока нет ставок</div>';
+        return;
+    }
+    box.innerHTML = records.map(r => renderHistRow(r)).join('');
+}
+
+// ============================================================
+// МОДАЛКА ЧУЖОГО ПРОФИЛЯ
+// ============================================================
+async function openProfileModal(playerId) {
+    if (!window.FB) return;
+    Sound.resume(); Sound.click();
+    $('profileModal').classList.add('active');
+
+    $('modalName').textContent = 'Загрузка...';
+    $('modalTags').innerHTML = '';
+    $('modalBalance').textContent = '';
+    $('modalAvatar').textContent = '?';
+    $('modalHistory').innerHTML = '<div class="hist-empty">Загрузка...</div>';
+
+    try {
+        // Загружаем профиль из лидерборда
+        const pRef = window.FB.ref(window.FB.db, 'leaderboard/' + playerId);
+        const pSnap = await window.FB.get(pRef);
+        const p = pSnap.exists() ? pSnap.val() : {};
+
+        $('modalName').textContent = p.name || 'Гость';
+
+        const tags = [];
+        if (p.isAdminPlus) tags.push('<span class="admin-tag admin-plus">ADMIN+</span>');
+        else if (p.isTester) tags.push('<span class="admin-tag tester">TESTER</span>');
+        $('modalTags').innerHTML = tags.join('');
+
+        const bal = Number(p.balance) || 0;
+        $('modalBalance').textContent = 'Баланс: ' + bal.toFixed(2);
+
+        const av = $('modalAvatar');
+        if (p.avatarUrl) {
+            av.innerHTML = `<img src="${escapeHtml(p.avatarUrl)}" onerror="this.parentNode.textContent='?'">`;
+        } else {
+            av.textContent = (p.name || '?').charAt(0).toUpperCase();
+        }
+
+        // Загружаем историю
+        const hRef = window.FB.ref(window.FB.db, 'history/' + playerId);
+        const hSnap = await window.FB.get(hRef);
+        const data = hSnap.val() || {};
+        const arr = Object.values(data);
+        arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        const recent = arr.slice(0, 10);
+
+        renderModalHistory(recent);
+    } catch(e) {
+        console.warn('Profile load failed', e);
+        $('modalHistory').innerHTML = '<div class="hist-empty">Ошибка загрузки</div>';
+    }
+}
+
+function closeProfileModal() {
+    $('profileModal').classList.remove('active');
+    Sound.click();
+}
+
+// ============================================================
+// SPIN — с Provably Fair
+// ============================================================
+async function spin() {
     if (spinning) return;
     if (bet <= 0) return;
     if (Math.round(bet * 100) > Math.round(state.balance * 100)) {
@@ -1323,11 +1631,28 @@ function spin() {
 
     Sound.resume();
 
-    let isWin;
+    // ========== PROVABLY FAIR ==========
+    state.nonce++;
+    const serverSeed = randomHex(64);
+    const serverSeedHash = await sha256Hex(serverSeed);
+    const clientSeed = randomHex(32);
+    const nonce = state.nonce;
+
+    // HMAC_SHA256(serverSeed, clientSeed:nonce)
+    const digest = await hmacSha256Hex(serverSeed, clientSeed + ':' + nonce);
+    const rollHex = digest.substring(0, 13); // first 52 bits
+    const roll = parseInt(rollHex, 16);
+    const space = Math.pow(2, 52);
+    // chance в % → доля → threshold
+    const pScaled = Math.floor(chance * 100000000); // chance * 10^8
+    const threshold = Math.floor(pScaled * space / 100000000);
+
+    // Проверяем результат по PF
+    let isWin = roll < threshold;
+
+    // ADMIN override
     if (state.isAdmin && state.alwaysWin) {
         isWin = true;
-    } else {
-        isWin = Math.random() * 100 < chance;
     }
 
     let prizeActive = false;
@@ -1356,6 +1681,7 @@ function spin() {
     if (isWin) state.balance += payout;
     if (state.balance > MAX_BALANCE) state.balance = MAX_BALANCE;
 
+    // Угол для анимации
     const half = (chance / 100) * 180;
     const prizeHalfDeg = (2 * half) * 0.10 / 2;
 
@@ -1387,6 +1713,19 @@ function spin() {
     state.pending = { bet, win, chance, isWin, payout, isPrize: prizeActive, prizeVisible: prizeSectorVisible, rotation, timestamp: Date.now() };
     save();
 
+    // Сохраняем PF для показа
+    lastPF = {
+        serverSeed,
+        serverSeedHash,
+        clientSeed,
+        nonce,
+        roll,
+        threshold,
+        chance,
+        isWin,
+        isPrize: prizeActive,
+    };
+
     spinning = true;
     update();
 
@@ -1404,6 +1743,20 @@ function spin() {
         state.pending = null;
         save();
 
+        // Запись в историю
+        const histRecord = {
+            bet: bet,
+            targetWin: win,
+            chance: chance,
+            win: isWin,
+            isPrize: prizeActive,
+            payout: payout,
+            type: prizeActive ? 'prize' : (isWin ? 'win' : 'lose'),
+            ts: Date.now(),
+        };
+        addToHistory(histRecord);
+        pushHistoryToFirebase(histRecord);
+
         if (isWin) {
             if (prizeActive) { showResult('★ ПРИЗ +' + payout.toFixed(2) + ' ★', 'prize'); Sound.prize(); }
             else { showResult('+' + payout.toFixed(2), 'win'); Sound.win(); }
@@ -1415,13 +1768,33 @@ function spin() {
 
         prizeSectorVisible = false;
         update();
-        pushMyBalanceToFirebase();
+        pushMyProfileToFirebase();
+        showProvablyFair(lastPF);
 
         if (state.balance < 1) {
             if (state.balance < 0) { state.balance = 0; save(); update(); }
             setTimeout(() => triggerCrash(bet), 600);
         }
     }, duration + 100);
+}
+
+function showProvablyFair(pf) {
+    if (!pf) return;
+    $('pfCard').style.display = 'block';
+    $('pfServerSeed').textContent = pf.serverSeed;
+    $('pfServerHash').textContent = pf.serverSeedHash;
+    $('pfClientSeed').textContent = pf.clientSeed;
+    $('pfNonce').textContent = pf.nonce;
+    $('pfRoll').textContent = pf.roll;
+    $('pfThreshold').textContent = pf.threshold;
+    const res = $('pfResult');
+    if (pf.isWin) {
+        res.textContent = pf.isPrize ? 'ВЫИГРЫШ + ПРИЗ' : 'ВЫИГРЫШ';
+        res.className = 'pf-value win';
+    } else {
+        res.textContent = 'ПРОИГРЫШ';
+        res.className = 'pf-value lose';
+    }
 }
 
 function triggerCashback(b) {
@@ -1454,7 +1827,7 @@ function restartAfterCrash() {
     save();
     $('crashOverlay').classList.remove('active');
     update();
-    pushMyBalanceToFirebase();
+    pushMyProfileToFirebase();
     document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelector('[data-tab="main"]').classList.add('active');
@@ -1540,7 +1913,7 @@ function saveNick() {
     if (state.isAdmin) {
         state.nickname = ADMIN_NICK;
         save(); update();
-        pushMyBalanceToFirebase();
+        pushMyProfileToFirebase();
         alert('У ADMIN ник всегда ADMIN.');
         return;
     }
@@ -1551,47 +1924,80 @@ function saveNick() {
     if (isReservedNick(v)) return alert('❌ Этот ник зарезервирован. Выбери другой.');
     state.nickname = v;
     save(); update();
-    pushMyBalanceToFirebase();
+    pushMyProfileToFirebase();
     alert('Ник сохранён: ' + v);
 }
 
-function saveAvatar() {
-    let url = $('avatarUrlInput').value.trim();
-    if (!url) return alert('Вставь ссылку на картинку');
-    if (!/^https?:\/\//i.test(url)) return alert('Ссылка должна начинаться с http:// или https://');
-    state.avatarUrl = url;
-    save(); update();
-    pushMyBalanceToFirebase();
-    alert('Аватар сохранён');
+// ============================================================
+// АВАТАРКА — загрузка файлом (base64)
+// ============================================================
+function checkImageSafe(file) {
+    // Простая проверка: имя файла не должно содержать 18+ метки
+    const name = (file.name || '').toLowerCase();
+    const badNames = ['18+', 'porn', 'xxx', 'sex', 'nude', 'nsfw', 'hentai', 'naked'];
+    for (const b of badNames) {
+        if (name.includes(b)) return false;
+    }
+    return true;
 }
+
+$('avatarFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Проверка типа
+    if (!/^image\/(png|jpeg|jpg|webp|gif)$/i.test(file.type)) {
+        alert('❌ Только PNG, JPG, WEBP или GIF.');
+        e.target.value = '';
+        return;
+    }
+
+    // Проверка размера
+    if (file.size > AVATAR_MAX_SIZE) {
+        alert('❌ Файл больше 200 КБ. Сожми картинку.');
+        e.target.value = '';
+        return;
+    }
+
+    // Проверка имени на 18+ метки
+    if (!checkImageSafe(file)) {
+        alert('❌ Запрещённый контент. Загрузи другую картинку.');
+        e.target.value = '';
+        return;
+    }
+
+    // Читаем как base64
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        state.avatarUrl = ev.target.result;
+        save(); update();
+        pushMyProfileToFirebase();
+        Sound.click();
+    };
+    reader.onerror = () => {
+        alert('❌ Ошибка чтения файла');
+    };
+    reader.readAsDataURL(file);
+});
 
 function resetAvatar() {
     state.avatarUrl = '';
-    $('avatarUrlInput').value = '';
+    $('avatarFile').value = '';
     save(); update();
-    pushMyBalanceToFirebase();
+    pushMyProfileToFirebase();
     Sound.click();
 }
 
 // ============================================================
-// ПРОМОКОД (через Firebase)
+// ПРОМОКОД
 // ============================================================
 async function applyPromo() {
     const code = $('promoInput').value.trim();
     const msg = $('promoMsg');
     Sound.resume();
 
-    if (!code) {
-        msg.textContent = 'Введи промокод';
-        msg.className = 'promo-msg err';
-        return;
-    }
-
-    if (!window.FB) {
-        msg.textContent = 'Firebase не загружен. Обновите страницу.';
-        msg.className = 'promo-msg err';
-        return;
-    }
+    if (!code) { msg.textContent = 'Введи промокод'; msg.className = 'promo-msg err'; return; }
+    if (!window.FB) { msg.textContent = 'Firebase не загружен'; msg.className = 'promo-msg err'; return; }
 
     msg.textContent = 'Проверка...';
     msg.className = 'promo-msg';
@@ -1601,27 +2007,21 @@ async function applyPromo() {
         const snap = await window.FB.get(pRef);
 
         if (!snap.exists()) {
-            msg.textContent = 'Неверный промокод';
-            msg.className = 'promo-msg err';
-            return;
+            msg.textContent = 'Неверный промокод'; msg.className = 'promo-msg err'; return;
         }
 
         const promo = snap.val();
         const once = promo.once !== false;
         if (once && state.usedPromos.includes(code)) {
-            msg.textContent = 'Промокод уже использован';
-            msg.className = 'promo-msg err';
-            return;
+            msg.textContent = 'Промокод уже использован'; msg.className = 'promo-msg err'; return;
         }
 
-        if (promo.balance) {
-            state.balance = Math.min(state.balance + Number(promo.balance), MAX_BALANCE);
-        }
+        if (promo.balance) state.balance = Math.min(state.balance + Number(promo.balance), MAX_BALANCE);
         if (promo.tester) state.isTester = true;
         if (once) state.usedPromos.push(code);
 
         save(); update();
-        pushMyBalanceToFirebase();
+        pushMyProfileToFirebase();
 
         msg.textContent = promo.msg || 'Активировано';
         msg.className = 'promo-msg ' + (promo.msgType || 'ok');
@@ -1634,16 +2034,15 @@ async function applyPromo() {
         msg.className = 'promo-msg err';
     }
 }
-
-// ============================================================
-// ADMIN ФУНКЦИИ
+      // ============================================================
+// ADMIN ФУНКЦИИ (только для MASTER_ID)
 // ============================================================
 function adminSetBalance() {
     if (!state.isAdmin) return;
     const v = parseFloat($('adminBalanceInput').value);
     if (isNaN(v) || v < 0) { alert('Введи корректное число'); return; }
     state.balance = Math.min(v, MAX_BALANCE);
-    save(); update(); pushMyBalanceToFirebase();
+    save(); update(); pushMyProfileToFirebase();
     $('adminBalanceInput').value = '';
     Sound.cashback();
 }
@@ -1651,7 +2050,7 @@ function adminSetBalance() {
 function adminAddBalance(amount) {
     if (!state.isAdmin) return;
     state.balance = Math.min(state.balance + amount, MAX_BALANCE);
-    save(); update(); pushMyBalanceToFirebase();
+    save(); update(); pushMyProfileToFirebase();
     Sound.cashback();
 }
 
@@ -1673,6 +2072,7 @@ function adminFullWipe() {
         • Все балансы в Firebase → 1000<br>
         • Все балансы у игроков (в их браузерах) → 1000<br>
         • Все записи лидерборда будут удалены<br>
+        • Вся история апгрейдов удалится<br>
         • Ники, статусы, промокоды — сбросятся<br><br>
         При следующем заходе все начнут с нуля.
     `;
@@ -1686,23 +2086,31 @@ async function doFullWipe() {
     if (!window.FB) { alert('Firebase не загружен'); return; }
 
     try {
+        // 1. Увеличиваем версию — принудительный сброс у всех
         const vRef = window.FB.ref(window.FB.db, 'config/balanceVersion');
         const vSnap = await window.FB.get(vRef);
         const oldV = vSnap.exists() ? vSnap.val() : 1;
         const newV = oldV + 1;
         await window.FB.set(vRef, newV);
 
-        const lbRef = window.FB.ref(window.FB.db, 'leaderboard');
-        await window.FB.remove(lbRef);
+        // 2. Удаляем лидерборд
+        await window.FB.remove(window.FB.ref(window.FB.db, 'leaderboard'));
 
+        // 3. Удаляем всю историю
+        await window.FB.remove(window.FB.ref(window.FB.db, 'history'));
+
+        // 4. Сбрасываем локально
         state.balance = 1000;
         state.balanceVersion = newV;
         state.pending = null;
+        state.nonce = 0;
         bet = 100;
         win = 125;
+        currentHistory = [];
+        renderMyHistory();
         save();
         update();
-        pushMyBalanceToFirebase();
+        pushMyProfileToFirebase();
 
         alert('✅ ПОЛНЫЙ СБРОС ВЫПОЛНЕН\n\nВсе игроки начнут с 1000 при следующем заходе.');
         renderLeaderboard();
@@ -1762,7 +2170,7 @@ $('alwaysPrizeToggle').addEventListener('click', () => {
 });
 
 // ============================================================
-// СБРОС БАЛАНСА
+// СБРОС ЛИЧНОГО БАЛАНСА
 // ============================================================
 function askReset() {
     Sound.resume(); Sound.click();
@@ -1784,13 +2192,24 @@ function doReset() {
     prizeSectorVisible = false;
     save();
     $('confirmOverlay').classList.remove('active');
-    update(); pushMyBalanceToFirebase();
+    update(); pushMyProfileToFirebase();
 }
 
 // ============================================================
-// КОСМЕТИЧЕСКАЯ ЗАЩИТА ОТ КОПИРОВАНИЯ
+// ЗАКРЫТИЕ МОДАЛКИ ПО КЛИКУ ВНЕ
+// ============================================================
+$('profileModal').addEventListener('click', (e) => {
+    if (e.target.id === 'profileModal') closeProfileModal();
+});
+$('confirmOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'confirmOverlay') cancelReset();
+});
+
+// ============================================================
+// КОСМЕТИЧЕСКАЯ ЗАЩИТА
 // ============================================================
 document.addEventListener('contextmenu', e => e.preventDefault());
+
 document.addEventListener('keydown', e => {
     if (e.key === 'F12') { e.preventDefault(); return false; }
     if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) {
@@ -1805,13 +2224,20 @@ document.addEventListener('keydown', e => {
         }
     }
 });
+
 document.addEventListener('selectstart', e => {
     const t = e.target;
     if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) {
         e.preventDefault(); return false;
     }
 });
-document.addEventListener('dragstart', e => e.preventDefault());
+
+document.addEventListener('dragstart', e => {
+    // Разрешаем drag только для файла аватарки
+    if (e.target && e.target.id !== 'avatarFile') {
+        e.preventDefault();
+    }
+});
 
 // ============================================================
 // СТАРТ
@@ -1830,11 +2256,11 @@ if (state.fastSpin) {
 $('soundToggle').classList.toggle('on', state.soundOn !== false);
 Sound.setEnabled(state.soundOn !== false);
 $('nickInput').value = state.nickname;
-$('avatarUrlInput').value = state.avatarUrl || '';
 
 $('alwaysWinToggle').classList.toggle('on', state.alwaysWin);
 $('alwaysPrizeToggle').classList.toggle('on', state.alwaysPrize);
 
+// Восстановление после обновления
 if (state.pending) {
     const p = state.pending;
     $('arrowRot').style.transition = 'none';
@@ -1872,8 +2298,16 @@ if (state.pending) {
 update();
 $('spinBtn').addEventListener('click', spin);
 
-window.addEventListener('fb-ready', () => checkBalanceVersion());
-if (window.FB) checkBalanceVersion();
-</script>
-</body>
-</html>
+// Firebase инициализация
+window.addEventListener('fb-ready', () => {
+    checkBalanceVersion();
+    getOrCreatePlayerId();
+    loadHistoryFromFirebase();
+    pushMyProfileToFirebase();
+});
+if (window.FB) {
+    checkBalanceVersion();
+    getOrCreatePlayerId();
+    loadHistoryFromFirebase();
+    pushMyProfileToFirebase();
+}
