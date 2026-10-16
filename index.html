@@ -8,6 +8,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, get, remove, push, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAkFgX0Q2SiPCoik633Jhfbx3m-ujW9Pzc",
@@ -21,7 +22,10 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  window.FB = { db, ref, set, get, remove, push, onValue, query, limitToLast };
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  window.FB = { db, ref, set, get, remove, push, onValue, query, limitToLast, auth, signInWithPopup, provider, onAuthStateChanged, signOut };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -436,11 +440,6 @@
 </style>
 </head>
 <body>
-<div id="loginBar" style="width:100%; max-width:1080px; margin-bottom:12px; display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-shrink:0;">
-    <button id="loginBtn" class="btn green" style="padding:10px 20px;">Войти через Google</button>
-    <button id="logoutBtn" class="btn danger" style="padding:10px 20px; display:none;">Выйти</button>
-    <span id="userEmail" style="color:#6b6b78; font-size:11px; display:none;"></span>
-</div>
 
 <div class="header">
     <div class="user-block">
@@ -595,6 +594,19 @@
 </div>
 
 <div class="screen" id="screen-settings">
+    <div class="cards" style="margin-bottom:10px;">
+        <div class="card">
+            <h3>Аккаунт</h3>
+            <div class="field">
+                <label>Вход через Google</label>
+                <span id="userEmail" style="color:#6b6b78; font-size:11px; display:none;"></span>
+                <button id="loginBtn" class="btn green">Войти</button>
+                <button id="logoutBtn" class="btn danger" style="display:none;">Выйти</button>
+            </div>
+            <div class="avatar-hint">Войди, чтобы твой прогресс сохранялся и бан работал по-настоящему.</div>
+        </div>
+    </div>
+
     <div class="cards">
         <div class="card">
             <h3>Цвет стрелки</h3>
@@ -1170,8 +1182,6 @@ async function pushMyProfileToFirebase() {
     if (state._invisible && state.isAdmin) return;
     try {
         const myId = getOrCreatePlayerId();
-
-        // ✅ Проверка бана ПЕРЕД записью
         const banSnap = await window.FB.get(window.FB.ref(window.FB.db, 'bans/' + myId));
         if (banSnap.exists()) return;
 
@@ -1184,7 +1194,7 @@ async function pushMyProfileToFirebase() {
         else if (isReservedNick(sendName)) { sendName = 'Игрок'; state.nickname = ''; save(); }
 
         const myRef = window.FB.ref(window.FB.db, 'leaderboard/' + myId);
-        window.FB.set(myRef, {
+        await window.FB.set(myRef, {
             name: sendName,
             balance: bal,
             avatarUrl: state.avatarUrl || '',
@@ -1192,7 +1202,7 @@ async function pushMyProfileToFirebase() {
             isAdminPlus: state.isAdmin,
             isAdmin: state.isAdmin,
             updatedAt: Date.now(),
-        });
+        }).catch(() => {});
     } catch(e) { console.warn('Firebase push failed', e); }
 }
 
@@ -1201,7 +1211,7 @@ async function pushHistoryToFirebase(record) {
     try {
         const myId = getOrCreatePlayerId();
         const hRef = window.FB.push(window.FB.ref(window.FB.db, 'history/' + myId));
-        await window.FB.set(hRef, record);
+        await window.FB.set(hRef, record).catch(() => {});
     } catch(e) { console.warn('History push failed', e); }
 }
 
@@ -2106,6 +2116,53 @@ $('confirmOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'confirmOverlay') cancelReset();
 });
 
+// ============================================================
+// FIREBASE AUTH — вход через Google (в Настройках)
+// ============================================================
+document.getElementById('loginBtn').addEventListener('click', async () => {
+    try {
+        await signInWithPopup(auth, provider);
+    } catch(e) {
+        alert('Ошибка входа: ' + e.message);
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+        await signOut(auth);
+        location.reload();
+    } catch(e) {
+        alert('Ошибка выхода: ' + e.message);
+    }
+});
+
+onAuthStateChanged(auth, (user) => {
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const emailSpan = document.getElementById('userEmail');
+
+    if (user) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        emailSpan.style.display = 'inline-block';
+        emailSpan.textContent = user.email || user.displayName || '';
+
+        const oldId = state.playerId;
+        state.playerId = user.uid;
+        if (oldId !== user.uid) {
+            save();
+            setTimeout(() => location.reload(), 500);
+        }
+    } else {
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+        emailSpan.style.display = 'none';
+    }
+});
+
+// ============================================================
+// СТАРТ
+// ============================================================
 load();
 
 document.documentElement.style.setProperty('--arrow', state.arrowColor);
@@ -2167,49 +2224,6 @@ checkAdmin().then(async () => {
         checkBalanceVersion();
         loadHistoryFromFirebase();
         pushMyProfileToFirebase();
-    }
-});
-// ============================================================
-// FIREBASE AUTH — вход через Google
-// ============================================================
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
-
-document.getElementById('loginBtn').addEventListener('click', async () => {
-    try {
-        await signInWithPopup(auth, provider);
-    } catch(e) {
-        alert('Ошибка входа: ' + e.message);
-    }
-});
-
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await signOut(auth);
-    location.reload();
-});
-
-onAuthStateChanged(auth, (user) => {
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const emailSpan = document.getElementById('userEmail');
-
-    if (user) {
-        loginBtn.style.display = 'none';
-        logoutBtn.style.display = 'inline-block';
-        emailSpan.style.display = 'inline-block';
-        emailSpan.textContent = user.email || user.displayName || '';
-
-        // Привязываем playerId к UID Google
-        const oldId = state.playerId;
-        state.playerId = user.uid;
-        if (oldId !== user.uid) {
-            save();
-            setTimeout(() => location.reload(), 500);
-        }
-    } else {
-        loginBtn.style.display = 'inline-block';
-        logoutBtn.style.display = 'none';
-        emailSpan.style.display = 'none';
     }
 });
 
